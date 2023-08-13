@@ -13,26 +13,33 @@ Practice with the following features:
 - reading from the swearwords and other locally saved files
 - sending images saved as responses
 
-- Content type filter
+- Content type filter -> filter if the message type is this or that
 """
 
 
 
 
+
+### LOADING TOKENS ###
+
 # loading the environment variables
 load_dotenv()
-
 TG_API_KEY = os.getenv('TG_API_KEY')
 bot = telebot.TeleBot(TG_API_KEY)
 OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
-
 # print(OPEN_API_KEY) # prints 'test ABC' correctly
+
+
+### LOADING NECESSARY FILES ###
+# construct the dataframe with the columns -> to later add rows to, and then append to the csv file as well.
+
+
+
+### COMMANDS ###
 
 @bot.message_handler(commands=['/start', '/menu'])
 def greet(message):
     bot.reply_to(message, "Howdy, how goes it?") # sends message in reply to the command message?
-
-
 
 def swear_word_detector(message):
     swear_words = {
@@ -46,6 +53,10 @@ def swear_word_detector(message):
             return True
     return False
 
+
+
+
+### FILTERS ###
 
 # define a swear word filter
 @bot.message_handler(func=swear_word_detector)
@@ -63,6 +74,9 @@ def filter_swearing(message):
 
 
 bot.polling()
+
+
+
 
 
 
