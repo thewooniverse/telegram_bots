@@ -24,7 +24,7 @@ The common usage here would be to "summarize" a specific response from GPT and "
 - Command to "display" all lessons learnt so far and provide options for all of the 
 -- /display_saved
 -- returns a list of all the saved messages and filenames
-
+test
 
 #### /read
 - Command to "read" a saved message
