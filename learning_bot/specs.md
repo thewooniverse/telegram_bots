@@ -23,11 +23,12 @@ The common usage here would be to "summarize" a specific response from GPT and "
 #### /display_saved
 - Command to "display" all lessons learnt so far and provide options for all of the 
 -- /display_saved
--- returns an organized list of
+-- returns a list of all the saved messages and filenames
+
 
 #### /read
 - Command to "read" a saved message
--- /
+-- /read 
 
 #### /delete
 - Command to "delete" a saved message in the directories
