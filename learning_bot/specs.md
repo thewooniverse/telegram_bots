@@ -21,10 +21,10 @@ The common usage here would be to "summarize" a specific response from GPT and "
 
 ### Command to display, access and manage saved summaries and messages
 #### /display_saved
-- Command to "display" all lessons learnt so far and provide options for all of the 
+- Command to "display" all lessons learnt so far and provide options for all of the
 -- /display_saved
 -- returns a list of all the saved messages and filenames
-test
+
 
 #### /read
 - Command to "read" a saved message
@@ -47,8 +47,15 @@ The commands are around creating quizzes (potentially, even MCQs, but mostly dia
 #### /retain
 
 
+SOLUTION / DEVELOPMENT PATH:
+First develop a basic bot that can handle messages, respond and respond using randomly saved files.
+Then test out / build out the ChatGPT API and familiarize with the data types received
+Then integrate simple message sending + receiving using ChatGPT API with Telegram bot to enable a conversation.
+
 
 NOTE:
 A couple days to spec the project out, and then ideas on implementation / solutions using OOP.
 A day or two to map out the modular development timeline / sequencing of what to develop.
 Then executing and building, testing accordingly.
+
+
