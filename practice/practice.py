@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 Practice with the following features:
 - Swearword filter
 -- saving the swearwords into logs with information about the sender and formatted time using dataframes to csv
+-- warning system with user.id chat violations
 
 - reading from the swearwords and other locally saved files
 - sending images saved as responses
@@ -20,15 +21,16 @@ Practice with the following features:
 
 
 
-### LOADING TOKENS ###
+### LOADING TOKENS AND CREATING BOT ###
 
 # loading the environment variables
 load_dotenv()
 TG_API_KEY = os.getenv('TG_API_KEY')
-bot = telebot.TeleBot(TG_API_KEY)
 OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
 # print(OPEN_API_KEY) # prints 'test ABC' correctly
+# print(TG_API_KEY)
 
+bot = telebot.TeleBot(TG_API_KEY)
 
 ### LOADING NECESSARY FILES ###
 # construct the dataframe with the columns -> to later add rows to, and then append to the csv file as well.
@@ -36,22 +38,10 @@ OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
 
 
 ### COMMANDS ###
-
-@bot.message_handler(commands=['/start', '/menu'])
+@bot.message_handler(commands=['start', 'menu'])
 def greet(message):
     bot.reply_to(message, "Howdy, how goes it?") # sends message in reply to the command message?
 
-def swear_word_detector(message):
-    swear_words = {
-        "curse_words": r'fuck|shit',
-        "racist_comments": r"cracker"
-    }
-    for key,value in swear_words.items():
-        pattern = re.compile(value)
-        result = re.findall(pattern, message)
-        if result:
-            return True
-    return False
 
 
 
@@ -59,21 +49,21 @@ def swear_word_detector(message):
 ### FILTERS ###
 
 # define a swear word filter
-@bot.message_handler(func=swear_word_detector)
+@bot.message_handler(regexp='shit')
 def filter_swearing(message):
     bot.reply_to(message, "You can't be saying things like this here!!")
 
 
 
 
+### begin code ###
+bot.infinity_polling()
 
 
 
 
 
 
-
-bot.polling()
 
 
 
