@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 import re
 import telebot
 import yfinance as yf
@@ -7,18 +8,25 @@ from dotenv import load_dotenv
 
 """
 Practice with the following features:
-- Swearword filter
--- saving the swearwords into logs with information about the sender and formatted time using dataframes to csv
--- warning system with user.id chat violations
 
-- reading from the swearwords and other locally saved files
-- sending images saved as responses
+Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins of ticker
+- simple usage of /ps
 
-- Content type filter -> filter if the message type is this or that
+
+Feature: /pc API [ticker] call for coingecko / cmc for the prices (similar to other price bots)
+
+
+Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
+-- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
+--- the filter reads from a predefined list of regex / swearwords
+-- a file to keep track of all of the violations thus far and check against, likely username and number of violations kept track and potentailly even the 
+cell containing specifically the string that they violated with or were reported for.
+-- in the case of multiple violations, they are muted to a progressive degree.
+
+
+Feature: filter for content type
+-- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc...
 """
-
-
-
 
 
 ### LOADING TOKENS AND CREATING BOT ###
@@ -37,6 +45,27 @@ bot = telebot.TeleBot(TG_API_KEY)
 
 
 
+
+
+data_5m = yf.download(tickers='gme', period='5m', interval='1m')
+data_5m_mean = data_5m['Close'].mean() # type is dataframe
+data_1d = yf.download(tickers='gme', period='1d', interval='1h')
+data_1d_mean = data_1d['Close'].mean()
+print(data_1d_mean)
+
+
+data_30m = yf.download(tickers='gme', period='30m', interval='1m')
+data_30m_close = data_30m['Close']
+
+data_30m_close.plot(kind='line')
+plt.show()
+
+
+
+
+
+
+
 ### COMMANDS ###
 @bot.message_handler(commands=['start', 'menu'])
 def greet(message):
@@ -44,6 +73,18 @@ def greet(message):
 
 
 
+@bot.message_handler(commands=['ps'])
+def send_price(message):
+  request = message.text.split()[1]
+  data = yf.download(tickers=request, period='5m', interval='1m')
+  if data.size > 0:
+    data = data.reset_index()
+    data["format_date"] = data['Datetime'].dt.strftime('%m/%d %I:%M %p')
+    data.set_index('format_date', inplace=True)
+    print(data.to_string())
+    bot.send_message(message.chat.id, data['Close'].to_string(header=False))
+  else:
+    bot.send_message(message.chat.id, "No data!?")
 
 
 ### FILTERS ###
