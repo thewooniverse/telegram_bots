@@ -1,4 +1,6 @@
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
 import telebot
@@ -10,11 +12,23 @@ from dotenv import load_dotenv
 Practice with the following features:
 
 Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins of ticker
-- simple usage of /ps
+- simple usage of /ps will bring the last 5 mins of prices by default
+- it should have sentiment based emoji based on the % change in the text string (practicing UTF / encoding and emojis as well)
+- very similar to existing price bots on Telegram
 
 
-Feature: /pc API [ticker] call for coingecko / cmc for the prices (similar to other price bots)
+Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots)
 
+Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response.
+
+Feature: /chart_stock [ticker] [timefrmae]
+
+Feature: /chart_coin [ticker] [timeframe]
+
+Feature: /noise [ticker] -> noise level analysis along with sentiment analysis
+
+Feature: settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
+-- for each chatid, theres a directory that saves the config files for that chat (and thereby stores the logs for that chat, warning logs and configurations)
 
 Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
 -- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
@@ -22,7 +36,6 @@ Feature: filter (delete) swearwords, warn users and mute in case of multiple vio
 -- a file to keep track of all of the violations thus far and check against, likely username and number of violations kept track and potentailly even the 
 cell containing specifically the string that they violated with or were reported for.
 -- in the case of multiple violations, they are muted to a progressive degree.
-
 
 Feature: filter for content type
 -- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc...
@@ -40,28 +53,36 @@ OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
 
 bot = telebot.TeleBot(TG_API_KEY)
 
-### LOADING NECESSARY FILES ###
+
+
+
+### LOADING NECESSARY FILES, CONFIGS AND SETTINGS ###
 # construct the dataframe with the columns -> to later add rows to, and then append to the csv file as well.
 
 
 
 
+### HELPER FUNCTIONS ###
+def sentiment_emoji(pct_change):
+   """
+   return a emoji that is ready to be sent as a string in response to mangitude of positive or negative percent that is passed.
+   """
+   pass
 
-data_5m = yf.download(tickers='gme', period='5m', interval='1m')
-data_5m_mean = data_5m['Close'].mean() # type is dataframe
-data_1d = yf.download(tickers='gme', period='1d', interval='1h')
-data_1d_mean = data_1d['Close'].mean()
-print(data_1d_mean)
+def parse_big_num(number):
+   """
+   parses a big number like 15486874 into 15M or B or etc... based on their length
+   """
+   pass
 
-
-data_30m = yf.download(tickers='gme', period='30m', interval='1m')
-data_30m_close = data_30m['Close']
-
-data_30m_close.plot(kind='line')
-plt.show()
-
-
-
+def pct_change(price1, price2):
+   """
+   Returns a % of price change of the two prices passed.
+   price1 should be the first price, price 2 should be the last price
+   """
+#    print(f"original price {price1}")
+#    print(f"final price {price2}, diff is {price1 - price2}")
+   return round((((price2 - price1) / price1) * 100),2)
 
 
 
@@ -75,16 +96,68 @@ def greet(message):
 
 @bot.message_handler(commands=['ps'])
 def send_price(message):
+  """
+  /ps [ticker]
+
+  sends a message in reply to the command by the user of the last few days of recent price changes.
+  example: /ps gme
+  << default CHART >>
+  | $GME     | $12
+  | H|L: $12 | $11
+  | 1H:  -5% [emoji]
+  | 24H: -5% [emoji]
+  | 7d:  -5% [emoji]
+  | Volume(7d): 35M
+  Shill link with URL / link
+  """
+  # get the ticker symbol
   request = message.text.split()[1]
-  data = yf.download(tickers=request, period='5m', interval='1m')
-  if data.size > 0:
-    data = data.reset_index()
-    data["format_date"] = data['Datetime'].dt.strftime('%m/%d %I:%M %p')
-    data.set_index('format_date', inplace=True)
-    print(data.to_string())
-    bot.send_message(message.chat.id, data['Close'].to_string(header=False))
+
+  # download all of the relevant dataframes
+  ## variable names are in the format of data_timeframe_interval
+  data_5m_1m = yf.download(tickers=request, period='5m', interval='1m')
+  data_24h_1h = yf.download(tickers=request, period='24h', interval='1h')
+  data_5d_1d = yf.download(tickers=request, period='5d', interval='1d')
+
+  if data_5m_1m.size > 0: # some data is received, one is enough since if one works the rest will likely work, and the check is mostly for ticker validity
+    # process the data into relevant columns for processing
+    data_5m_1m_close = data_5m_1m['Close'].round(2)
+    data_24h_1h_close = data_24h_1h['Close'].round(2)
+    data_5d_1d_close = data_5d_1d['Close'].round(2)
+
+    # get relevant prices
+    last_known_price = data_5m_1m_close.iloc[-1] 
+    data_24_high = data_24h_1h_close.max()
+    data_24_low = data_24h_1h_close.min()
+
+    # get the relevant pct changes which is (first price - last price / first price) for each timeframe
+    change_24h = pct_change(data_24h_1h_close.iloc[0], data_24h_1h_close.iloc[-1])
+    change_7d = pct_change(data_5d_1d_close.iloc[0], data_5d_1d_close.iloc[-1])
+    volume_7d = data_5d_1d['Volume'].sum()
+
+    # process the data to plot out the image, save the image and load the image into a photo variable that can be sent with a caption.
+    data_5d_1d_close.plot(kind='line', title=f'7D price for {request}')
+    figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
+    plt.savefig(figure_path)
+
+    # construct the string with processed data and image and send
+    response = f"""| ${request.upper()} | {last_known_price}
+| H|L: {data_24_high}|{data_24_low}
+| 24H: {change_24h}%
+| 7d:  {change_7d}%
+| Vol(7d): {volume_7d}"""
+    ## read the byte and load the image and hyperlink for ref links
+    with open(figure_path, 'rb') as photo:
+       bot.send_photo(message.chat.id, photo, caption=response)
+
+    # delete and tidy up the files / folders created
+    if os.path.exists(figure_path):
+       os.remove(figure_path)
+    plt.clf()
+
   else:
-    bot.send_message(message.chat.id, "No data!?")
+    bot.send_message(message.chat.id, "No data!")
+
 
 
 ### FILTERS ###
