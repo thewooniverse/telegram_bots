@@ -6,7 +6,7 @@ import re
 import telebot
 import yfinance as yf
 from dotenv import load_dotenv
-
+import random
 
 """
 Practice with the following features:
@@ -39,6 +39,14 @@ cell containing specifically the string that they violated with or were reported
 
 Feature: filter for content type
 -- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc...
+
+NOTE:
+Reaistically though, its not necessary for a single price bot to have all of these moderator tools as well...
+Frankenstein bot almost this is... after it I am going to probably need to divide up and clean up the code a lot.
+
+TODO:
+- emoji logic
+- parsing K, billions logic
 """
 
 
@@ -67,11 +75,41 @@ def sentiment_emoji(pct_change):
    """
    return a emoji that is ready to be sent as a string in response to mangitude of positive or negative percent that is passed.
    """
-   pass
+   emoji_dict = {
+      "insanely_bullish": ['🌝','👽'], #90%+ above mega pumps
+      "very_bullish": ['🚀', '⏫'], # 30-90% gain
+      "bullish": ['📈', '🔼'], # 10-30% gain
+      "slightly_bullish": ['🫰','🫶'], # 1-10% gain
+      "slightly_bearish": ['😬','😐'], # 1- 10% drop 
+      "bearish": ['😰', '😨'], # 10-30% drop
+      "very_bearish": ['😩', '🥶'], # 30-75-% drop
+      "insanely_bearish": ['🤡', '☠️', '🪦', '🤣'] # gg, -75% or higher
+   }
+   if pct_change >= 90:
+      return random.choice(emoji_dict['insanely_bullish'])
+   elif pct_change >= 30:
+      return random.choice(emoji_dict['very_bullish'])
+   elif pct_change >= 10:
+      return random.choice(emoji_dict['bullish'])
+   elif pct_change >= 0:
+      return random.choice(emoji_dict['slightly_bullish'])
+   elif pct_change >= -10:
+      return random.choice(emoji_dict['slightly_bearish'])
+   elif pct_change >= -30:
+      return random.choice(emoji_dict['bearish'])
+   elif pct_change >= -75:
+      return random.choice(emoji_dict['very_bearish'])
+   elif pct_change < -75:
+      return random.choice(emoji_dict['insanely_bearish'])
+
+
+
+
 
 def parse_big_num(number):
    """
-   parses a big number like 15486874 into 15M or B or etc... based on their length
+   parses a big number like 15486874 into 15M or B or etc... based on their length and returns it in strings like
+   15M, 8B, 1M, 500K etc...
    """
    pass
 
@@ -110,7 +148,7 @@ def send_price(message):
   | Volume(7d): 35M
   Shill link with URL / link
   """
-  # get the ticker symbol
+  # get the ticker symbol from message
   request = message.text.split()[1]
 
   # download all of the relevant dataframes
@@ -125,7 +163,7 @@ def send_price(message):
     data_24h_1h_close = data_24h_1h['Close'].round(2)
     data_5d_1d_close = data_5d_1d['Close'].round(2)
 
-    # get relevant prices
+    # get relevant prices data
     last_known_price = data_5m_1m_close.iloc[-1] 
     data_24_high = data_24h_1h_close.max()
     data_24_low = data_24h_1h_close.min()
@@ -136,16 +174,18 @@ def send_price(message):
     volume_7d = data_5d_1d['Volume'].sum()
 
     # process the data to plot out the image, save the image and load the image into a photo variable that can be sent with a caption.
-    data_5d_1d_close.plot(kind='line', title=f'7D price for {request}')
+    data_5d_1d_close.plot(kind='line', title=f'7D price for {request.upper()}')
     figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
     plt.savefig(figure_path)
 
     # construct the string with processed data and image and send
-    response = f"""| ${request.upper()} | {last_known_price}
+    response = f"""
+| ${request.upper()} | {last_known_price}
 | H|L: {data_24_high}|{data_24_low}
-| 24H: {change_24h}%
-| 7d:  {change_7d}%
-| Vol(7d): {volume_7d}"""
+| 24H: {change_24h}% {sentiment_emoji(change_24h)}
+| 7d:  {change_7d}% {sentiment_emoji(change_7d)}
+| Vol(7d): {volume_7d}
+<a href='https://www.example.com'>Advertise with us</a>"""
     ## read the byte and load the image and hyperlink for ref links
     with open(figure_path, 'rb') as photo:
        bot.send_photo(message.chat.id, photo, caption=response)
@@ -153,7 +193,7 @@ def send_price(message):
     # delete and tidy up the files / folders created
     if os.path.exists(figure_path):
        os.remove(figure_path)
-    plt.clf()
+    plt.clf() # clears the plots plotted so far
 
   else:
     bot.send_message(message.chat.id, "No data!")
@@ -218,6 +258,43 @@ bot.infinity_polling()
 
 
 
+
+"""
+GPT feedback on sentiment_emoji:
+import random
+
+def sentiment_emoji(pct_change):
+   "
+   Return an emoji based on the magnitude of positive or negative percent change passed.
+   "
+   # Define the categories, thresholds, and corresponding emojis
+   categories = [
+      (90, 'insanely_bullish'),
+      (30, 'very_bullish'),
+      (10, 'bullish'),
+      (0, 'slightly_bullish'),
+      (-10, 'slightly_bearish'),
+      (-30, 'bearish'),
+      (-75, 'very_bearish'),
+      (-float('inf'), 'insanely_bearish')  # this captures anything less than -75
+   ]
+   
+   emoji_dict = {
+      "insanely_bullish": ['🌝','👽'],
+      "very_bullish": ['🚀', '⏫'],
+      "bullish": ['📈', '🔼'],
+      "slightly_bullish": ['🫰','🫶'],
+      "slightly_bearish": ['😬','😐'],
+      "bearish": ['😰', '😨'],
+      "very_bearish": ['😩', '🥶'],
+      "insanely_bearish": ['🤡', '☠️', '🪦', '🤣']
+   }
+
+   for threshold, sentiment in categories:
+      if pct_change >= threshold:
+         return random.choice(emoji_dict[sentiment])
+
+"""
 
 
 
