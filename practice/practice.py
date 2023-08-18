@@ -45,8 +45,6 @@ Reaistically though, its not necessary for a single price bot to have all of the
 Frankenstein bot almost this is... after it I am going to probably need to divide up and clean up the code a lot.
 
 TODO:
-- emoji logic
-- parsing K, billions logic
 """
 
 
@@ -105,13 +103,31 @@ def sentiment_emoji(pct_change):
 
 
 
-
 def parse_big_num(number):
    """
    parses a big number like 15486874 into 15M or B or etc... based on their length and returns it in strings like
    15M, 8B, 1M, 500K etc...
+   the number is positive only
    """
-   pass
+   categories = [(9, 'B 🐋'),
+                 (6, 'M 🐬'),
+                 (3, 'K 🐟')] # for anything less than 3 digits len(number)
+   digits = len(str(number))
+
+   for threshold, word in categories:
+      if digits > threshold:
+         cutoff_digit = int(str(number)[0:digits-threshold]) # pre-rounding
+         # handle rounding
+         cutoff_plus1_digit = str(number)[0:digits-threshold+1]
+         last_digit_plus1 = int(cutoff_plus1_digit[-1])
+         if last_digit_plus1 >= 5:
+            cutoff_digit += 1
+
+         #return with rounding
+         return f'{cutoff_digit}{word}'
+   return f'{str(number)}🦐'
+# print(parse_big_num(1590555))
+   
 
 def pct_change(price1, price2):
    """
@@ -123,6 +139,13 @@ def pct_change(price1, price2):
    return round((((price2 - price1) / price1) * 100),2)
 
 
+def is_index_stock(ticker):
+   stockindex_format = f"^{ticker}"
+   data = yf.download(tickers=stockindex_format, period='24h', interval='1h')
+   if data.size > 0:
+      return stockindex_format
+   else:
+      return ticker # if there is no data, then the ticker will remain the same
 
 
 ### COMMANDS ###
@@ -132,6 +155,11 @@ def greet(message):
 
 
 
+
+
+# sample_data = yf.download(tickers='SU.TO', period='1mo', interval='1d')
+# print(sample_data)
+
 @bot.message_handler(commands=['ps'])
 def send_price(message):
   """
@@ -140,16 +168,16 @@ def send_price(message):
   sends a message in reply to the command by the user of the last few days of recent price changes.
   example: /ps gme
   << default CHART >>
-  | $GME     | $12
+  | $GME     |    $12
   | H|L: $12 | $11
-  | 1H:  -5% [emoji]
   | 24H: -5% [emoji]
   | 7d:  -5% [emoji]
   | Volume(7d): 35M
   Shill link with URL / link
   """
-  # get the ticker symbol from message
+  # get and filter the ticker symbol from message
   request = message.text.split()[1]
+  request = is_index_stock(request)
 
   # download all of the relevant dataframes
   ## variable names are in the format of data_timeframe_interval
@@ -179,16 +207,20 @@ def send_price(message):
     plt.savefig(figure_path)
 
     # construct the string with processed data and image and send
+    # construct response line by line.
     response = f"""
-| ${request.upper()} | {last_known_price}
-| H|L: {data_24_high}|{data_24_low}
-| 24H: {change_24h}% {sentiment_emoji(change_24h)}
-| 7d:  {change_7d}% {sentiment_emoji(change_7d)}
-| Vol(7d): {volume_7d}
+| ${request.upper():<10}|{last_known_price:>10}
+| H|L: {data_24_high:<10}|{data_24_low:>10}
+| 24H: {change_24h:>5}% {sentiment_emoji(change_24h)}
+| 7d:  {change_7d:>5}% {sentiment_emoji(change_7d)}
+| Vol(7d): {parse_big_num(volume_7d)}
+---
 <a href='https://www.example.com'>Advertise with us</a>"""
+
+
     ## read the byte and load the image and hyperlink for ref links
     with open(figure_path, 'rb') as photo:
-       bot.send_photo(message.chat.id, photo, caption=response)
+       bot.send_photo(message.chat.id, photo, caption=response, parse_mode='HTML')
 
     # delete and tidy up the files / folders created
     if os.path.exists(figure_path):
@@ -196,7 +228,7 @@ def send_price(message):
     plt.clf() # clears the plots plotted so far
 
   else:
-    bot.send_message(message.chat.id, "No data!")
+    bot.send_message(message.chat.id, "No data!\n For indexes please add a ^ to the ticker like ^SPX ^DJI. \nFor overseas stocks please define their market like SU.TO or WEED.TO")
 
 
 
@@ -294,6 +326,53 @@ def sentiment_emoji(pct_change):
       if pct_change >= threshold:
          return random.choice(emoji_dict[sentiment])
 
+"""
+
+
+""" FEEDBACK ON Parsing big number
+Your code seems to be working in the intended direction. Here's a bit of feedback and a revised version of the function:
+
+1. **Documentation**: Your docstring is great as it provides a clear explanation of what the function does. Always maintain this practice!
+
+2. **Using float**: If a number is `15486874`, the function would return `15M`, which is a rounded-down version. However, if you wish to provide more precision, consider formatting with float (like `15.4M`).
+
+3. **Edge Cases**: Consider handling cases where `number` might be negative or a floating-point number.
+
+4. **Readability**: Breaking the code into more descriptive variable names might increase the readability.
+
+Here's a slightly modified version with more precision and handling for edge cases:
+
+```python
+def parse_big_num(number):
+    "
+    Parses a big number like 15486874 into 15M or B or etc... based on their length 
+    and returns it in strings like 15M, 8B, 1M, 500K etc...
+    "
+    if not isinstance(number, (int, float)):
+        return None  # or raise an appropriate error
+    
+    # Handle negative numbers
+    sign = "-" if number < 0 else ""
+    number = abs(number)
+    
+    categories = [(1_000_000_000, 'B'),
+                  (1_000_000, 'M'),
+                  (1_000, 'K')]
+    
+    for threshold, word in categories:
+        if number >= threshold:
+            return f"{sign}{number / threshold:.1f} {word}"
+    return f"{sign}{number}"
+```
+
+In the above code:
+
+- The function checks if the provided `number` is an integer or float, otherwise returns `None`.
+- It handles negative numbers by extracting the sign and working with the absolute value.
+- It uses actual number thresholds (like `1_000_000_000` for billion) rather than the number of digits. This makes it more explicit.
+- The function returns the number with one decimal point for clarity (like `15.4M`).
+
+Note: The usage of underscores in numbers (like `1_000_000_000`) is just for readability and is a feature available in Python 3.6 and later.
 """
 
 
