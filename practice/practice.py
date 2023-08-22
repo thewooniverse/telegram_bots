@@ -17,9 +17,13 @@ Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins
 - very similar to existing price bots on Telegram
 
 
-Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots)
 
-Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response.
+
+Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
+
+Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response and then saving it into a config file.
+
+
 
 Feature: /chart_stock [ticker] [timefrmae]
 
@@ -127,7 +131,6 @@ def parse_big_num(number):
          return f'{cutoff_digit}{word}'
    return f'{str(number)}🦐'
 # print(parse_big_num(1590555))
-   
 
 def pct_change(price1, price2):
    """
@@ -209,11 +212,11 @@ def send_price(message):
     # construct the string with processed data and image and send
     # construct response line by line.
     response = f"""
-| ${request.upper():<10}|{last_known_price:>10}
-| H|L: {data_24_high:<10}|{data_24_low:>10}
-| 24H: {change_24h:>5}% {sentiment_emoji(change_24h)}
-| 7d:  {change_7d:>5}% {sentiment_emoji(change_7d)}
-| Vol(7d): {parse_big_num(volume_7d)}
+| {'$'+request.upper():<15}|{'$'+str(last_known_price):>15}
+| {'H|L:   $' + str(data_24_high):<15}|{'$'+str(data_24_low):>15}
+| {"24H:    " + str(change_24h):>6 +"%"} {sentiment_emoji(change_24h)}
+| {"7D:     " + str(change_7d):>6 +"%"} {sentiment_emoji(change_7d)}
+| {'Vol(7D):' + str(parse_big_num(volume_7d))}
 ---
 <a href='https://www.example.com'>Advertise with us</a>"""
 
