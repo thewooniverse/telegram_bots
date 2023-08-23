@@ -17,8 +17,6 @@ Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins
 - very similar to existing price bots on Telegram
 
 
-
-
 Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
 
 Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response and then saving it into a config file.
@@ -49,6 +47,11 @@ Reaistically though, its not necessary for a single price bot to have all of the
 Frankenstein bot almost this is... after it I am going to probably need to divide up and clean up the code a lot.
 
 TODO:
+0. Formatting and padding using length of responses -> helper function to pretty-fy it
+1. Optional interval dataset to handle different types / amounts of data available
+2. Config and default config files
+3. Refactor Different response types based on config files
+-- Chart config
 """
 
 
@@ -211,14 +214,33 @@ def send_price(message):
 
     # construct the string with processed data and image and send
     # construct response line by line.
-    response = f"""
-| {'$'+request.upper():<15}|{'$'+str(last_known_price):>15}
-| {'H|L:   $' + str(data_24_high):<15}|{'$'+str(data_24_low):>15}
-| {"24H:    " + str(change_24h):>6 +"%"} {sentiment_emoji(change_24h)}
-| {"7D:     " + str(change_7d):>6 +"%"} {sentiment_emoji(change_7d)}
-| {'Vol(7D):' + str(parse_big_num(volume_7d))}
----
-<a href='https://www.example.com'>Advertise with us</a>"""
+    response = f'${request.upper()} | ${str(last_known_price)}'
+    response+= f'\n------------------------\n'
+    response+= f'24H H|L   👉${str(data_24_high)} | ${str(data_24_low)}\n'
+    response+= f'24H change   👉{str(change_24h)}% {sentiment_emoji(change_24h)}\n'
+    response+= f'7D change   👉{str(change_7d)}% {sentiment_emoji(change_7d)}\n'
+    response+= f'Volume 7D:   👉${str(parse_big_num(volume_7d))}'
+    response+= f'\n------------------------\n'
+    response+= f"<a href='https://www.example.com'>Advertise with us</a>"
+
+
+    
+#     response = f"""
+
+
+# {"$"+request.upper():<10}{"|":^10}{"$"+str(last_known_price):>10}
+# {"- 24H High:":<10}{"|":^10}{"$"+str(data_24_high):>10}
+
+
+# | - LAST PRICE:{"$"+str(last_known_price):>25}
+# | - 24H High:{"$"+str(data_24_high):>25}
+# | - 24H Low:            ${str(data_24_low)}
+# | - 24H %change:   ${str(change_24h)}% {sentiment_emoji(change_24h)}
+# | - 7D  %change:    ${str(change_7d)}% {sentiment_emoji(change_7d)}
+# | - Volume 7D  :       ${str(parse_big_num(volume_7d))}
+# ---
+# <a href='https://www.example.com'>Advertise with us</a>"""
+
 
 
     ## read the byte and load the image and hyperlink for ref links
