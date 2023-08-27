@@ -17,20 +17,37 @@ Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins
 - very similar to existing price bots on Telegram
 
 
+
+---- COMPELTED FEATURES ----
+NEXT UP:
+- /ps tidy up dataframes, intervals
+- /ps pretty formatting for the graphs!
+
+
+- #general test out multithreading in the context of telebot;
+bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
 
 Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response and then saving it into a config file.
 
-
-
-Feature: /chart_stock [ticker] [timefrmae]
-
-Feature: /chart_coin [ticker] [timeframe]
-
 Feature: /noise [ticker] -> noise level analysis along with sentiment analysis
 
-Feature: settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
--- for each chatid, theres a directory that saves the config files for that chat (and thereby stores the logs for that chat, warning logs and configurations)
+Feature: configurations / settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
+-- for each chatid (groupchat), there should be a directory for that chat, configs / settings, logs, bans etc...
 
 Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
 -- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
@@ -40,7 +57,9 @@ cell containing specifically the string that they violated with or were reported
 -- in the case of multiple violations, they are muted to a progressive degree.
 
 Feature: filter for content type
--- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc...
+-- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc..
+
+
 
 NOTE:
 Reaistically though, its not necessary for a single price bot to have all of these moderator tools as well...
@@ -197,12 +216,14 @@ def send_price(message):
   data_5m_1m = yf.download(tickers=request, period='5m', interval='1m')
   data_24h_1h = yf.download(tickers=request, period='24h', interval='1h')
   data_5d_1d = yf.download(tickers=request, period='5d', interval='1d')
+  data_1m_1d = yf.download(tickers=request, period='1mo', interval='1d')
 
   if data_5m_1m.size > 0: # some data is received, one is enough since if one works the rest will likely work, and the check is mostly for ticker validity
     # process the data into relevant columns for processing
     data_5m_1m_close = data_5m_1m['Close'].round(2)
     data_24h_1h_close = data_24h_1h['Close'].round(2)
     data_5d_1d_close = data_5d_1d['Close'].round(2)
+    data_1m_1d_close = data_1m_1d['Close'].round(2)
 
     # get relevant prices data
     last_known_price = data_5m_1m_close.iloc[-1] 
@@ -215,7 +236,7 @@ def send_price(message):
     volume_7d = data_5d_1d['Volume'].sum()
 
     # process the data to plot out the image, save the image and load the image into a photo variable that can be sent with a caption.
-    data_5d_1d_close.plot(kind='line', title=f'7D price for {request.upper()}')
+    data_1m_1d_close.plot(kind='line', title=f'7D price for {request.upper()}')
     figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
     plt.savefig(figure_path)
 

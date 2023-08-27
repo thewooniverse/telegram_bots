@@ -20,7 +20,7 @@ import random
 
 
 
-data_5m_1m = yf.download(tickers='gme', period='5m', interval='1m')
+data_5m_1m = yf.download(tickers='gme', period='1d', interval='1m')
 print(data_5m_1m)
 
 ticker = yf.Ticker('GME')
