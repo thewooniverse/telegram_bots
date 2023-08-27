@@ -116,9 +116,10 @@ def parse_big_num(number):
    15M, 8B, 1M, 500K etc...
    the number is positive only
    """
-   categories = [(9, 'B 🐋'),
-                 (6, 'M 🐬'),
-                 (3, 'K 🐟')] # for anything less than 3 digits len(number)
+   categories = [(12, 'T'),
+                 (9, 'B'),
+                 (6, 'M'),
+                 (3, 'K')] # for anything less than 3 digits len(number)
    digits = len(str(number))
 
    for threshold, word in categories:
@@ -132,7 +133,7 @@ def parse_big_num(number):
 
          #return with rounding
          return f'{cutoff_digit}{word}'
-   return f'{str(number)}🦐'
+   return f'{str(number)}'
 # print(parse_big_num(1590555))
 
 def pct_change(price1, price2):
@@ -152,6 +153,10 @@ def is_index_stock(ticker):
       return stockindex_format
    else:
       return ticker # if there is no data, then the ticker will remain the same
+
+
+
+
 
 
 ### COMMANDS ###
@@ -187,6 +192,8 @@ def send_price(message):
 
   # download all of the relevant dataframes
   ## variable names are in the format of data_timeframe_interval
+  ticker_data = yf.Ticker(request)
+
   data_5m_1m = yf.download(tickers=request, period='5m', interval='1m')
   data_24h_1h = yf.download(tickers=request, period='24h', interval='1h')
   data_5d_1d = yf.download(tickers=request, period='5d', interval='1d')
@@ -212,36 +219,25 @@ def send_price(message):
     figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
     plt.savefig(figure_path)
 
+    
+    price_of_eth = 1500
+    # define custom zero padding
+
+
+
     # construct the string with processed data and image and send
     # construct response line by line.
-    response = f'${request.upper()} | ${str(last_known_price)}'
-    response+= f'\n------------------------\n'
-    response+= f'24H H|L   👉${str(data_24_high)} | ${str(data_24_low)}\n'
-    response+= f'24H change   👉{str(change_24h)}% {sentiment_emoji(change_24h)}\n'
-    response+= f'7D change   👉{str(change_7d)}% {sentiment_emoji(change_7d)}\n'
-    response+= f'Volume 7D:   👉${str(parse_big_num(volume_7d))}'
-    response+= f'\n------------------------\n'
-    response+= f"<a href='https://www.example.com'>Advertise with us</a>"
-
 
     
-#     response = f"""
-
-
-# {"$"+request.upper():<10}{"|":^10}{"$"+str(last_known_price):>10}
-# {"- 24H High:":<10}{"|":^10}{"$"+str(data_24_high):>10}
-
-
-# | - LAST PRICE:{"$"+str(last_known_price):>25}
-# | - 24H High:{"$"+str(data_24_high):>25}
-# | - 24H Low:            ${str(data_24_low)}
-# | - 24H %change:   ${str(change_24h)}% {sentiment_emoji(change_24h)}
-# | - 7D  %change:    ${str(change_7d)}% {sentiment_emoji(change_7d)}
-# | - Volume 7D  :       ${str(parse_big_num(volume_7d))}
-# ---
-# <a href='https://www.example.com'>Advertise with us</a>"""
-
-
+    response = f"<a href='https://finance.yahoo.com/quote/{request}'>{request.upper()}</a><pre> {'$'+str(last_known_price)}\n"
+    response+= f"Ξ: {round((last_known_price/price_of_eth),8)}\n"
+    response+= f"H|L: {str(data_24_high)}|{str(data_24_low)}\n"
+    response+= f'{"24H":<5}{str(change_24h)+"%":>8} {sentiment_emoji(change_24h)}\n'
+    response+= f'{"7D":<5}{str(change_7d)+"%":>8} {sentiment_emoji(change_7d)}\n'
+    response+= f'Market Cap: {parse_big_num(ticker_data.info["marketCap"])}\n'
+    response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
+    response+= f'-----\n</pre>'
+    response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
 
     ## read the byte and load the image and hyperlink for ref links
     with open(figure_path, 'rb') as photo:
