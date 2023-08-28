@@ -7,6 +7,7 @@ import telebot
 import yfinance as yf
 from dotenv import load_dotenv
 import random
+import io
 
 """
 Practice with the following features:
@@ -242,11 +243,6 @@ def send_price(message):
 
      # acquire the volume
      volume_7d = data_1month_5m['Volume'].last('7D').sum()
-     
-     #TODO: refactor so we don't need to delete the file
-     data_close.plot(kind='line', title=f'1 Month price for {request.upper()}')
-     figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
-     plt.savefig(figure_path)
 
      # get the price of ETH
      price_eth = 1500
@@ -262,13 +258,23 @@ def send_price(message):
      response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
      
      ## read the byte and load the image and hyperlink for ref links
-     with open(figure_path, 'rb') as photo:
-        bot.send_photo(message.chat.id, photo, caption=response, parse_mode='HTML')
+     #TODO: refactor so we don't need to delete the file
+     data_close.plot(kind='line', title=f'1 Month price for {request.upper()}')
+     buf = io.BytesIO()
+     plt.savefig(buf, format='png')
+     buf.seek(0)
+
+
+   #   figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
+   #   plt.savefig(figure_path)
+     bot.send_photo(message.chat.id, buf.read(), caption=response, parse_mode='HTML')
+     plt.clf()
+     buf.close()
  
      # delete and tidy up the files / folders created
-     if os.path.exists(figure_path):
-        os.remove(figure_path)
-     plt.clf() # clears the plots plotted so far
+   #   if os.path.exists(figure_path):
+   #      os.remove(figure_path)
+   #   plt.clf() # clears the plots plotted so far
  
 
   else:
