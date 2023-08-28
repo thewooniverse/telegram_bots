@@ -8,6 +8,8 @@ import yfinance as yf
 from dotenv import load_dotenv
 import random
 import io
+import json
+
 
 """
 Practice with the following features:
@@ -27,6 +29,10 @@ NEXT UP:
 
 - #general test out multithreading in the context of telebot;
 bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
+
+
+TODO:
+Bugfixes and continued fixes for config files
 
 
 
@@ -91,7 +97,31 @@ bot = telebot.TeleBot(TG_API_KEY)
 
 
 ### LOADING NECESSARY FILES, CONFIGS AND SETTINGS ###
-# construct the dataframe with the columns -> to later add rows to, and then append to the csv file as well.
+def load_config(group_id):
+   # if the filepath with the group ID does not exist, create the directory and the config file, then load the default config and save defaults 
+   # to the newly created config.
+   chat_path = f'{os.getcwd()}{os.path.sep}chats'
+   group_path = f'{chat_path}{os.path.sep}{group_id}'
+   config_path = f"{group_path}{os.path.sep}config.json"
+   if not os.path.exists(group_path):
+      # create the directory for the group
+      os.mkdir(group_path)
+      # open the default config and load it
+      with open(f"{chat_path}{os.path.sep}default_config.json", 'r') as rf:
+         default_config = json.load(rf)
+
+
+
+         # # open then configuration path and dump the file
+         # with open(config_path, "w") as wf:
+         #    wf.write()
+         #    json.dump(default_config, wf)
+
+
+   # load and return the configuration
+   with open(config_path, 'r') as rf:
+      config_dict = json.load(rf)
+      return config_dict
 
 
 
@@ -129,8 +159,6 @@ def sentiment_emoji(pct_change):
       return random.choice(emoji_dict['insanely_bearish'])
 
 
-
-
 def parse_big_num(number):
    """
    parses a big number like 15486874 into 15M or B or etc... based on their length and returns it in strings like
@@ -160,15 +188,13 @@ def parse_big_num(number):
          #return with rounding
          return f'{cutoff_digit}{word}'
    return f'{str(number)}'
-# print(parse_big_num(1590555))
+
 
 def pct_change(price1, price2):
    """
    Returns a % of price change of the two prices passed.
    price1 should be the first price, price 2 should be the last price
    """
-#    print(f"original price {price1}")
-#    print(f"final price {price2}, diff is {price1 - price2}")
    return round((((price2 - price1) / price1) * 100),2)
 
 
@@ -185,17 +211,19 @@ def is_index_stock(ticker):
 
 
 
+
+
+
+
+
+
+
+
+
 ### COMMANDS ###
 @bot.message_handler(commands=['start', 'menu'])
 def greet(message):
     bot.reply_to(message, "Howdy, how goes it?") # sends message in reply to the command message?
-
-
-
-
-
-# sample_data = yf.download(tickers='SU.TO', period='1mo', interval='1d')
-# print(sample_data)
 
 @bot.message_handler(commands=['ps'])
 def send_price(message):
@@ -212,6 +240,11 @@ def send_price(message):
   | Volume(7d): 35M
   Shill link with URL / link
   """
+  # load the configuration files:
+  config = load_config(message.chat.id)
+  print(config)
+
+
   # get and filter the ticker symbol from message
   request = message.text.split()[1]
   request = is_index_stock(request)
@@ -263,27 +296,17 @@ def send_price(message):
      buf = io.BytesIO()
      plt.savefig(buf, format='png')
      buf.seek(0)
-
-
-   #   figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
-   #   plt.savefig(figure_path)
      bot.send_photo(message.chat.id, buf.read(), caption=response, parse_mode='HTML')
+     # clean the plts and close the buffer
      plt.clf()
      buf.close()
- 
-     # delete and tidy up the files / folders created
-   #   if os.path.exists(figure_path):
-   #      os.remove(figure_path)
-   #   plt.clf() # clears the plots plotted so far
- 
-
+  
   else:
     bot.send_message(message.chat.id, "No data!\n For indexes please add a ^ to the ticker like ^SPX ^DJI. \nFor overseas stocks please define their market like SU.TO or WEED.TO")
 
 
 
 ### FILTERS ###
-
 # define a swear word filter
 @bot.message_handler(regexp='shit')
 def filter_swearing(message):

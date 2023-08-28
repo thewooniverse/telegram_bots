@@ -1,0 +1,12 @@
+{
+    "group_id": "",
+    "currency": "USD",
+    "tracked_stocks": ["COIN", "TSLA", "GME"],
+    "tracked_coins": ["BTC", "ETH", "DOGE"],
+    "admins": [],
+    "chart_settings": {
+        "stocks": "1month",
+        "coins": "1day"
+    }
+}
+  
