@@ -98,25 +98,28 @@ bot = telebot.TeleBot(TG_API_KEY)
 
 ### LOADING NECESSARY FILES, CONFIGS AND SETTINGS ###
 def load_config(group_id):
+   """
+   load_config(group_id), takes a single string as a group id
+   """
    # if the filepath with the group ID does not exist, create the directory and the config file, then load the default config and save defaults 
    # to the newly created config.
    chat_path = f'{os.getcwd()}{os.path.sep}chats'
    group_path = f'{chat_path}{os.path.sep}{group_id}'
    config_path = f"{group_path}{os.path.sep}config.json"
-   if not os.path.exists(group_path):
-      # create the directory for the group
-      os.mkdir(group_path)
-      # open the default config and load it
+
+
+   if not os.path.exists(config_path):
+      # check if the group path itself exists, if it doesn't create it.
+      if not os.path.exists(group_path):
+         os.mkdir(group_path)
+      
+      # then open the default config, and write its content (default settings) into the config_path file
       with open(f"{chat_path}{os.path.sep}default_config.json", 'r') as rf:
          default_config = json.load(rf)
-
-
-
-         # # open then configuration path and dump the file
-         # with open(config_path, "w") as wf:
-         #    wf.write()
-         #    json.dump(default_config, wf)
-
+         # print(default_config)
+         wf = open(config_path, 'w')
+         json.dump(default_config, wf)
+         wf.close()
 
    # load and return the configuration
    with open(config_path, 'r') as rf:
@@ -242,8 +245,6 @@ def send_price(message):
   """
   # load the configuration files:
   config = load_config(message.chat.id)
-  print(config)
-
 
   # get and filter the ticker symbol from message
   request = message.text.split()[1]
@@ -254,7 +255,8 @@ def send_price(message):
      mcap = ticker_data.info['marketCap']
   except:
      mcap = 0
-  data_1month_5m = data_5m_1m = yf.download(tickers=request, period='1mo', interval='5m')
+
+  data_1month_5m = yf.download(tickers=request, period='1mo', interval='5m')
   
   # if some data is returned, we may process
   if data_1month_5m.size > 0:
@@ -290,9 +292,14 @@ def send_price(message):
      response+= f'-----\n</pre>'
      response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
      
-     ## read the byte and load the image and hyperlink for ref links
-     #TODO: refactor so we don't need to delete the file
-     data_close.plot(kind='line', title=f'1 Month price for {request.upper()}')
+     ## read the byte and load the image and hyperlink for ref links, timeframe is based on the config file settings;
+     cfg_period = config['chart_settings']['stocks']['period']
+     cfg_interval = config['chart_settings']['stocks']['interval']
+
+
+     plot_data = yf.download(tickers=request, period=cfg_period, interval=cfg_interval)['Close']
+
+     plot_data.plot(kind='line', title=f'{cfg_period} price for {request.upper()}')
      buf = io.BytesIO()
      plt.savefig(buf, format='png')
      buf.seek(0)

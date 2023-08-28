@@ -7,7 +7,7 @@ import telebot
 import yfinance as yf
 from dotenv import load_dotenv
 import random
-
+import json
 
 # random_tickers = ['COIN', 'TSLA', 'GS', 'GM', "GME", 'AAPL']
 # random_prices = ['325', '1259', '12', '5', '1235', '543']
@@ -24,6 +24,10 @@ data_5m_1m = yf.download(tickers='gme', period='1mo', interval='5m')
 print(data_5m_1m)
 print(data_5m_1m.last('7D'))
 print(data_5m_1m.last('7D')['Close'].min())
+
+
+with open('data.json', 'w') as f:
+    json.dump(data_5m_1m, f)
 
 
 

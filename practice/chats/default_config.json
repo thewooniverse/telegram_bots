@@ -4,9 +4,5 @@
     "tracked_stocks": ["COIN", "TSLA", "GME"],
     "tracked_coins": ["BTC", "ETH", "DOGE"],
     "admins": [],
-    "chart_settings": {
-        "stocks": "1month",
-        "coins": "1day"
-    }
+    "chart_settings": {"stocks": {"period": "1MO", "interval": "1D"}, "coins": {"period": "1D", "interval": "5m"}}
 }
-  
