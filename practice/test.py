@@ -20,11 +20,17 @@ import random
 
 
 
-data_5m_1m = yf.download(tickers='gme', period='1d', interval='1m')
+data_5m_1m = yf.download(tickers='gme', period='1mo', interval='5m')
 print(data_5m_1m)
+print(data_5m_1m.last('7D'))
+print(data_5m_1m.last('7D')['Close'].min())
 
-ticker = yf.Ticker('GME')
-print(ticker.info)
+
+
+
+# ticker = yf.Ticker('GME')
+# print(ticker.info)
+
 
 
 

@@ -136,6 +136,11 @@ def parse_big_num(number):
    15M, 8B, 1M, 500K etc...
    the number is positive only
    """
+
+   if number == 0:
+      return "NA"
+
+
    categories = [(12, 'T'),
                  (9, 'B'),
                  (6, 'M'),
@@ -210,65 +215,61 @@ def send_price(message):
   request = message.text.split()[1]
   request = is_index_stock(request)
 
-  # download all of the relevant dataframes
-  ## variable names are in the format of data_timeframe_interval
   ticker_data = yf.Ticker(request)
+  try:
+     mcap = ticker_data.info['marketCap']
+  except:
+     mcap = 0
+  data_1month_5m = data_5m_1m = yf.download(tickers=request, period='1mo', interval='5m')
+  
+  # if some data is returned, we may process
+  if data_1month_5m.size > 0:
+     data_close = data_1month_5m['Close'].round(2)
+     close_prices_24h = data_close.last('24H')
 
-  data_5m_1m = yf.download(tickers=request, period='5m', interval='1m')
-  data_24h_1h = yf.download(tickers=request, period='24h', interval='1h')
-  data_5d_1d = yf.download(tickers=request, period='5d', interval='1d')
-  data_1m_1d = yf.download(tickers=request, period='1mo', interval='1d')
+     # acquire each piece of information we're interested in
+     last_known_price = data_close.iloc[-1]
+     high_24h = close_prices_24h.max()
+     low_24h = close_prices_24h.min()
 
-  if data_5m_1m.size > 0: # some data is received, one is enough since if one works the rest will likely work, and the check is mostly for ticker validity
-    # process the data into relevant columns for processing
-    data_5m_1m_close = data_5m_1m['Close'].round(2)
-    data_24h_1h_close = data_24h_1h['Close'].round(2)
-    data_5d_1d_close = data_5d_1d['Close'].round(2)
-    data_1m_1d_close = data_1m_1d['Close'].round(2)
+     ## acquire the percent changes
+     close_prices_1h = data_close.last('1H') #24h is already assigned
+     close_prices_7d =  data_close.last('7D')
 
-    # get relevant prices data
-    last_known_price = data_5m_1m_close.iloc[-1] 
-    data_24_high = data_24h_1h_close.max()
-    data_24_low = data_24h_1h_close.min()
+     pct_change_1h = pct_change(close_prices_1h.iloc[0], close_prices_1h.iloc[-1])
+     pct_change_24h = pct_change(close_prices_24h.iloc[0], close_prices_24h.iloc[-1])
+     pct_change_7d = pct_change(close_prices_7d.iloc[0], close_prices_7d.iloc[-1])
 
-    # get the relevant pct changes which is (first price - last price / first price) for each timeframe
-    change_24h = pct_change(data_24h_1h_close.iloc[0], data_24h_1h_close.iloc[-1])
-    change_7d = pct_change(data_5d_1d_close.iloc[0], data_5d_1d_close.iloc[-1])
-    volume_7d = data_5d_1d['Volume'].sum()
+     # acquire the volume
+     volume_7d = data_1month_5m['Volume'].last('7D').sum()
+     
+     #TODO: refactor so we don't need to delete the file
+     data_close.plot(kind='line', title=f'1 Month price for {request.upper()}')
+     figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
+     plt.savefig(figure_path)
 
-    # process the data to plot out the image, save the image and load the image into a photo variable that can be sent with a caption.
-    data_1m_1d_close.plot(kind='line', title=f'7D price for {request.upper()}')
-    figure_path = f'{os.getcwd()}{os.path.sep}{request}_temp.png'
-    plt.savefig(figure_path)
-
-    
-    price_of_eth = 1500
-    # define custom zero padding
-
-
-
-    # construct the string with processed data and image and send
-    # construct response line by line.
-
-    
-    response = f"<a href='https://finance.yahoo.com/quote/{request}'>{request.upper()}</a><pre> {'$'+str(last_known_price)}\n"
-    response+= f"Ξ: {round((last_known_price/price_of_eth),8)}\n"
-    response+= f"H|L: {str(data_24_high)}|{str(data_24_low)}\n"
-    response+= f'{"24H":<5}{str(change_24h)+"%":>8} {sentiment_emoji(change_24h)}\n'
-    response+= f'{"7D":<5}{str(change_7d)+"%":>8} {sentiment_emoji(change_7d)}\n'
-    response+= f'Market Cap: {parse_big_num(ticker_data.info["marketCap"])}\n'
-    response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
-    response+= f'-----\n</pre>'
-    response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
-
-    ## read the byte and load the image and hyperlink for ref links
-    with open(figure_path, 'rb') as photo:
-       bot.send_photo(message.chat.id, photo, caption=response, parse_mode='HTML')
-
-    # delete and tidy up the files / folders created
-    if os.path.exists(figure_path):
-       os.remove(figure_path)
-    plt.clf() # clears the plots plotted so far
+     # get the price of ETH
+     price_eth = 1500
+     response = f"<a href='https://finance.yahoo.com/quote/{request}'>{request.upper()}</a><pre> {'$'+str(last_known_price)}\n"
+     response+= f"Ξ: {round((last_known_price/price_eth),8)}\n"
+     response+= f"H|L: {str(high_24h)}|{str(low_24h)}\n"
+     response+= f'{"1H":<5}{str(pct_change_1h)+"%":>8} {sentiment_emoji(pct_change_1h)}\n'
+     response+= f'{"24H":<5}{str(pct_change_24h)+"%":>8} {sentiment_emoji(pct_change_24h)}\n'
+     response+= f'{"7D":<5}{str(pct_change_7d)+"%":>8} {sentiment_emoji(pct_change_7d)}\n'
+     response+= f'Market Cap: {parse_big_num(mcap)}\n'
+     response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
+     response+= f'-----\n</pre>'
+     response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
+     
+     ## read the byte and load the image and hyperlink for ref links
+     with open(figure_path, 'rb') as photo:
+        bot.send_photo(message.chat.id, photo, caption=response, parse_mode='HTML')
+ 
+     # delete and tidy up the files / folders created
+     if os.path.exists(figure_path):
+        os.remove(figure_path)
+     plt.clf() # clears the plots plotted so far
+ 
 
   else:
     bot.send_message(message.chat.id, "No data!\n For indexes please add a ^ to the ticker like ^SPX ^DJI. \nFor overseas stocks please define their market like SU.TO or WEED.TO")
