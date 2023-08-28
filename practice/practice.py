@@ -49,6 +49,7 @@ Feature: /noise [ticker] -> noise level analysis along with sentiment analysis
 Feature: configurations / settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
 -- for each chatid (groupchat), there should be a directory for that chat, configs / settings, logs, bans etc...
 
+
 Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
 -- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
 --- the filter reads from a predefined list of regex / swearwords
