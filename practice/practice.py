@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import random
 import io
 import json
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 
 """
@@ -18,34 +20,47 @@ Feature: /ps [ticker] API call for yahoo finance prices for [ticker] last 5 mins
 - simple usage of /ps will bring the last 5 mins of prices by default
 - it should have sentiment based emoji based on the % change in the text string (practicing UTF / encoding and emojis as well)
 - very similar to existing price bots on Telegram
-
-
-
----- COMPELTED FEATURES ----
 NEXT UP:
 - /ps tidy up dataframes, intervals
 - /ps pretty formatting for the graphs!
 
+---- COMPELTED FEATURES ABOVE ----
 
-- #general test out multithreading in the context of telebot;
+1. /start feature with buttons
+-- /start shows the basic usage and set up
+---- /ps /pc /settings /help in the usage / welcome message and overview
+---- buttons direct you to help regarding specific functions (with more buttons)
+---- settings button direct you to specific functions as well.
+
+2. /help [command]
+-- provides help regarding a command, sending the docstring, parsed as a HTML to the chat;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ICE BOX:
+
+/GPT [Query] -
+
+
+UPGRADE: Introducing "threaded" polling / multithreading for bot;
 bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
+or polling(threaded=True)
 
 
-TODO:
-Bugfixes and continued fixes for config files
-
-
-
-
-
-
-
-
-
-
-
-
-
+Feature: /gpt -> simple integration into calling GPT model with a specific message / query, and responding with the response from GPT.
 
 Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
 
@@ -55,7 +70,6 @@ Feature: /noise [ticker] -> noise level analysis along with sentiment analysis
 
 Feature: configurations / settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
 -- for each chatid (groupchat), there should be a directory for that chat, configs / settings, logs, bans etc...
-
 
 Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
 -- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
@@ -96,7 +110,7 @@ bot = telebot.TeleBot(TG_API_KEY)
 
 
 
-### LOADING NECESSARY FILES, CONFIGS AND SETTINGS ###
+## Config Management ##
 def load_config(group_id):
    """
    load_config(group_id), takes a single string as a group id
@@ -125,6 +139,47 @@ def load_config(group_id):
    with open(config_path, 'r') as rf:
       config_dict = json.load(rf)
       return config_dict
+
+
+
+def set_config(group_id, settings):
+   """
+   group_id == chatid.
+   settings is a tuple that should be unpacked in (settings, value) manner.
+   """
+   pass
+
+
+
+
+# state management handling and functions
+def set_state(chat_id, state):
+   """
+   """
+   state_log_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}states.json'
+   # checks if the state file exists, if it doesn't create an empty one
+   if not os.path.exists(state_log_path):
+      with open(state_log_path, 'w') as wf:
+         json.dump({}, wf)
+   
+   # now that the state is created, we can access / open it.
+   states = {}
+   with open(state_log_path, 'r') as rf:
+      states = json.load(rf)
+
+   # access / amend the state
+   states[chat_id] = state
+
+   # overwrite the state:
+   with open(state_log_path, 'w') as wf:
+      json.dump(states, wf)
+   
+
+def get_state(chat_id):
+   state_log_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}states.json'
+   with open(state_log_path, 'r') as rf:
+      states = json.load(rf)
+      return states.get(chat_id, 'main')
 
 
 
@@ -215,18 +270,214 @@ def is_index_stock(ticker):
 
 
 
-
-
-
-
-
-
-
-
 ### COMMANDS ###
 @bot.message_handler(commands=['start', 'menu'])
-def greet(message):
-    bot.reply_to(message, "Howdy, how goes it?") # sends message in reply to the command message?
+def start(message):
+   set_state(f'{message.chat.id}_{message.message_id}', 'main')
+   response_string = f"""
+Hello this is {bot.get_my_name().name}!
+
+Here are my basic command lists:
+/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
+/ps GME
+
+/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
+/ps BTC
+
+/help [command] - returns the help article and usage of a given command.
+/help ps
+
+/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
+
+Choose directly from the options below:
+"""
+   # define markups / button handling
+   markup = main_menu()
+   bot.reply_to(message, response_string, reply_markup=markup)
+
+
+
+
+def main_menu():
+   markup = InlineKeyboardMarkup()
+   markup.add(InlineKeyboardButton("Settings", callback_data='settings'))
+   markup.add(InlineKeyboardButton("Help", callback_data='help'))
+   return markup
+
+def settings_menu():
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("/ps settings", callback_data='ps_settings'))
+    markup.add(InlineKeyboardButton("/pc settings", callback_data='pc_settings'))
+    markup.add(InlineKeyboardButton("Go back", callback_data='main'))
+    # TODO: add more buttons / features in the future like localized currencies
+    return markup
+
+
+def help_menu():
+   markup = InlineKeyboardMarkup()
+   markup.add(InlineKeyboardButton("/ps", callback_data='ps_help'))
+   markup.add(InlineKeyboardButton("/pc", callback_data='pc_help'))
+   markup.add(InlineKeyboardButton("Go back", callback_data='main'))
+   return markup
+
+
+
+
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+   # get the current state of the chat
+   message_key = f'{call.message.chat.id}_{call.message.message_id}'
+
+   current_state = get_state(message_key)
+
+
+   # main menu and state
+
+   if current_state == 'main':
+   # settings and settings sub menu / states
+      if call.data == 'settings':
+         # change the state
+         set_state(message_key, 'settings_menu')
+
+         # load the settings menu buttons
+         markup = settings_menu()
+
+         # load / construct the message based on current configurations
+         ## the config is accessed based on chat.id, as the config files persist on a chat level instead of a message level
+         config = load_config(call.message.chat.id)
+         # unpack the configuration and create the response / settings message to user based on current configurations;
+         settings_message = "Current Configuration:\n"
+         for key,value in config.items():
+            ignore_keys = ['group_id', 'admins']
+            # pass all
+            if key not in ignore_keys:
+               settings_message+=f'{key}: {value}\n'
+
+         # load and edit the message / buttons
+         bot.edit_message_text(settings_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+
+      if call.data == 'help':
+         # change the state
+         set_state(message_key, 'help_menu')
+         # load the help menu buttons
+         markup = help_menu()
+
+         # construct the response message / string
+         help_message = "Press on each button to view the help"
+
+         # load and edit the message / buttons
+         bot.edit_message_text(help_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
+      
+
+
+
+
+   if current_state == 'settings_menu':
+
+      if call.data == 'main':
+         # set the state back to main:
+         set_state(message_key, 'main')
+
+         # load the markup buttons for main menu
+         markup = main_menu()
+         # construct the string for main menu
+         response_string = f"""
+Hello this is {bot.get_my_name().name}!
+
+Here are my basic command lists:
+/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
+/ps GME
+
+/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
+/ps BTC
+
+/help [command] - returns the help article and usage of a given command.
+/help ps
+
+/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
+
+For detailed help on functions, press the help button.
+For settings and configurations, press the settings button.
+"""
+         # load and send the new message:
+         bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
+      
+      # handle different price settings states
+      if call.data == 'ps_settings':
+         bot.answer_callback_query(call.id, "You chose /ps settings")
+      if call.data == 'pc_settings':
+         bot.answer_callback_query(call.id, "You chose /pc settings")
+   
+   if current_state == 'help_menu':
+      if call.data == 'main':
+         # set the state back to main:
+         set_state(message_key, 'main')
+
+         # load the markup buttons for main menu
+         markup = main_menu()
+         # construct the string for main menu
+         response_string = f"""
+Hello this is {bot.get_my_name().name}!
+
+Here are my basic command lists:
+/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
+/ps GME
+
+/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
+/ps BTC
+
+/help [command] - returns the help article and usage of a given command.
+/help ps
+
+/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
+
+For detailed help on functions, press the help button.
+For settings and configurations, press the settings button.
+"""
+         # load and send the new message:
+         bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
+      
+
+      # handle different help messages
+      if call.data == 'ps_help':
+         bot.answer_callback_query(call.id, "You chose /ps help")
+      if call.data == 'pc_help':
+         bot.answer_callback_query(call.id, "You chose /pc help")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @bot.message_handler(commands=['ps'])
 def send_price(message):
