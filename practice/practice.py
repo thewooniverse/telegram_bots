@@ -58,12 +58,13 @@ BD for peepo bot will be very important -> Kudasai and other integrations, feedb
 PLEASE USE OUR BOT!
 
 
-
-
-
 UPGRADE: Introducing "threaded" polling / multithreading for bot;
 bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
 or polling(threaded=True)
+Multithreaded testing, multiple groupchats handling.
+
+
+
 
 
 Feature: /gpt -> simple integration into calling GPT model with a specific message / query, and responding with the response from GPT.
@@ -880,16 +881,21 @@ def handle_ps_callback(call):
       config = load_config(call.message.chat.id)
       cfg_period = config['chart_settings']['stocks']['period']
       cfg_interval = config['chart_settings']['stocks']['interval']
+      
       plot_data = yf.download(tickers=ticker, period=cfg_period, interval=cfg_interval)['Close']
-      plot_data.plot(kind='line', title=f'{cfg_period} price for {ticker.upper()}')
-      buf = io.BytesIO()
-      plt.savefig(buf, format='png')
-      buf.seek(0)
 
-      bot.send_photo(call.message.chat.id, buf.read(), parse_mode='HTML')
-      # clean the plts and close the buffer
-      plt.clf()
-      buf.close()
+      if plot_data.size > 0:
+         plot_data.plot(kind='line', title=f'{cfg_period} price for {ticker.upper()}')
+         buf = io.BytesIO()
+         plt.savefig(buf, format='png')
+         buf.seek(0)
+
+         bot.send_photo(call.message.chat.id, buf.read(), parse_mode='HTML')
+         # clean the plts and close the buffer
+         plt.clf()
+         buf.close()
+      else:
+         bot.send_message(call.message.chat.id, "This combination of timeframes are not available, please change in /start -> settings")
 
 
 
