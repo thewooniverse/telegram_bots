@@ -52,13 +52,13 @@ NEXT UP:
 
 ICE BOX:
 
+Refactor dialogues for modularity.
+
+
 /GPT [Query] -
 
 BD for peepo bot will be very important -> Kudasai and other integrations, feedback, calls etc...
 PLEASE USE OUR BOT!
-
-
-
 
 
 
@@ -89,6 +89,8 @@ cell containing specifically the string that they violated with or were reported
 
 Feature: filter for content type
 -- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc..
+
+
 
 
 
@@ -291,19 +293,11 @@ def start(message):
    response_string = f"""
 Hello this is {bot.get_my_name().name}!
 
-Here are my basic command lists:
-/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
-/ps GME
+Press the "Help" button to find out more about the different commands I can run!
 
-/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
-/ps BTC
+Press the "Settings" button to configure the bots and how different commands behave!
 
-/help [command] - returns the help article and usage of a given command.
-/help ps
-
-/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
-
-Choose directly from the options below:
+Any questions feel free to join our Telegram group!
 """
    # define markups / button handling
    markup = main_menu()
@@ -313,54 +307,54 @@ Choose directly from the options below:
 
 def main_menu():
    markup = InlineKeyboardMarkup()
-   settings_button = InlineKeyboardButton("Settings ⚙️", callback_data='settings')
-   help_button = InlineKeyboardButton("Help ℹ️", callback_data='help')
+   settings_button = InlineKeyboardButton("Settings ⚙️", callback_data='start|settings')
+   help_button = InlineKeyboardButton("Help ℹ️", callback_data='start|help')
    markup.row(settings_button, help_button)
    return markup
 
 def settings_menu():
     # TODO: add more buttons / features in the future like localized currencies
     markup = InlineKeyboardMarkup()
-    back_button = InlineKeyboardButton("Go back 🔙", callback_data='main')
-    ps_button = InlineKeyboardButton("/ps settings", callback_data='ps_settings')
-    pc_button = InlineKeyboardButton("/pc settings", callback_data='pc_settings')
-    markup.row(ps_button,pc_button)
+    back_button = InlineKeyboardButton("Go back 🔙", callback_data='start|main')
+    ps_button = InlineKeyboardButton("/ps settings", callback_data='start|ps_settings')
+    pc_button = InlineKeyboardButton("/pc settings", callback_data='start|pc_settings')
+    markup.row(ps_button, pc_button)
     markup.row(back_button)
     return markup
 
 
 def help_menu():
    markup = InlineKeyboardMarkup()
-   ps_help_button = InlineKeyboardButton("/ps", callback_data='ps_help')
-   pc_help_button = InlineKeyboardButton("/pc", callback_data='pc_help')
-   back_button = InlineKeyboardButton("Go back 🔙", callback_data='main')
+   ps_help_button = InlineKeyboardButton("/ps", callback_data='start|ps_help')
+   pc_help_button = InlineKeyboardButton("/pc", callback_data='start|pc_help')
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='start|main')
    markup.row(ps_help_button, pc_help_button)
    markup.row(back_button)
    return markup
 
 def ps_options():
    markup = InlineKeyboardMarkup()
-   back_button = InlineKeyboardButton("Go back 🔙", callback_data='settings')
-   chart_settings_button = InlineKeyboardButton("Chart Settings 📈", callback_data='chart_settings')
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='start|settings')
+   chart_settings_button = InlineKeyboardButton("Chart Settings 📈", callback_data='start|chart_settings')
    markup.row(chart_settings_button)
    markup.row(back_button)
    return markup
 
 def stock_chart_menu():
    markup = InlineKeyboardMarkup()
-   back_button = InlineKeyboardButton("Go back 🔙", callback_data='ps_settings')
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='start|ps_settings')
 
    # period buttons
-   p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='period_1y')
-   pytd_button = InlineKeyboardButton("Period: YTD", callback_data='period_ytd')
-   p3mo_button = InlineKeyboardButton("Period: 3 Month", callback_data='period_3mo')
-   p1mo_button = InlineKeyboardButton("Period: 1 Month", callback_data='period_1mo')
+   p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='start|period_1y')
+   pytd_button = InlineKeyboardButton("Period: YTD", callback_data='start|period_ytd')
+   p3mo_button = InlineKeyboardButton("Period: 3 Month", callback_data='start|period_3mo')
+   p1mo_button = InlineKeyboardButton("Period: 1 Month", callback_data='start|period_1mo')
 
    # interval buttons
-   i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='interval_1d')
-   i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='interval_1h')
-   i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='interval_5m')
-   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='interval_1m')
+   i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='start|interval_1d')
+   i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='start|interval_1h')
+   i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='start|interval_5m')
+   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='start|interval_1m')
 
    # formatting the buttons
    markup.row(p1y_button, pytd_button)
@@ -374,8 +368,7 @@ def stock_chart_menu():
 
 
 
-
-@bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'start')
 def callback_handler(call):
    # get the current state of the chat
    message_key = f'{call.message.chat.id}_{call.message.message_id}'
@@ -384,7 +377,7 @@ def callback_handler(call):
    # main menu and states
    if current_state == 'main':
    # settings and settings sub menu / states
-      if call.data == 'settings':
+      if call.data == 'start|settings':
          # change the state
          set_state(message_key, 'settings_menu')
          # load the settings menu buttons
@@ -404,7 +397,7 @@ def callback_handler(call):
          # load and edit the message / buttons
          bot.edit_message_text(settings_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
-      if call.data == 'help':
+      if call.data == 'start|help':
          # change the state
          set_state(message_key, 'help_menu')
          # load the help menu buttons
@@ -418,7 +411,7 @@ def callback_handler(call):
       
 
    if current_state == 'settings_menu':
-      if call.data == 'main':
+      if call.data == 'start|main':
          # set the state back to main:
          set_state(message_key, 'main')
 
@@ -428,20 +421,11 @@ def callback_handler(call):
          response_string = f"""
 Hello this is {bot.get_my_name().name}!
 
-Here are my basic command lists:
-/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
-/ps GME
+Press the "Help" button to find out more about the different commands I can run!
 
-/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
-/ps BTC
+Press the "Settings" button to configure the bots and how different commands behave!
 
-/help [command] - returns the help article and usage of a given command.
-/help ps
-
-/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
-
-For detailed help on functions, press the help button.
-For settings and configurations, press the settings button.
+Any questions feel free to join our Telegram group!
 """
          # load and send the new message:
          bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
@@ -449,7 +433,7 @@ For settings and configurations, press the settings button.
 
 
       # handle different price settings and change states accordingly
-      if call.data == 'ps_settings':
+      if call.data == 'start|ps_settings':
          # set the state to ps_settings
          set_state(message_key, 'ps_options')
 
@@ -478,7 +462,7 @@ For settings and configurations, press the settings button.
          bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
       # pc feature is NOT built yet, therefore does not have any functionality, but it will be built in a similar way as the /ps features and settings
-      if call.data == 'pc_settings':
+      if call.data == 'start|pc_settings':
          bot.answer_callback_query(call.id, "You chose /pc settings")
    
 
@@ -487,7 +471,7 @@ For settings and configurations, press the settings button.
    if current_state == 'ps_options':
 
       # if user presses "go back" -> their callback data will be 'settings'
-      if call.data == 'settings':
+      if call.data == 'start|settings':
          # change the state
          set_state(message_key, 'settings_menu')
          # load the settings menu buttons
@@ -508,7 +492,7 @@ For settings and configurations, press the settings button.
          bot.edit_message_text(settings_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
       # if the user presses 'chart settings' -> this will construct a new bunch of settings
-      if call.data == 'chart_settings':
+      if call.data == 'start|chart_settings':
          # set the state
          set_state(message_key, 'stock_chart_settings')
 
@@ -530,7 +514,7 @@ For settings and configurations, press the settings button.
    if current_state == 'stock_chart_settings':
 
       # if the user presses "go back" - the call data will be
-      if call.data == 'ps_settings':
+      if call.data == 'start|ps_settings':
          # set the state to ps_settings
          set_state(message_key, 'ps_options')
 
@@ -560,7 +544,7 @@ For settings and configurations, press the settings button.
 
 
       # each handling should change the config on the chat.id config level and send a message in the chat to confirm! But the markups should remain the same..?
-      if call.data == 'period_1y':
+      if call.data == 'start|period_1y':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -579,7 +563,7 @@ For settings and configurations, press the settings button.
          bot.send_message(call.message.chat.id, response_string)
 
       
-      if call.data == 'period_ytd':
+      if call.data == 'start|period_ytd':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -599,7 +583,7 @@ For settings and configurations, press the settings button.
 
 
       
-      if call.data == 'period_1y':
+      if call.data == 'start|period_1y':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -619,7 +603,7 @@ For settings and configurations, press the settings button.
 
 
       
-      if call.data == 'period_1mo':
+      if call.data == 'start|period_1mo':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -643,7 +627,7 @@ For settings and configurations, press the settings button.
 
 
       # handle all of the interval cahnges
-      if call.data == 'interval_1d':
+      if call.data == 'start|interval_1d':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -662,7 +646,7 @@ For settings and configurations, press the settings button.
          bot.send_message(call.message.chat.id, response_string)
       
       
-      if call.data == 'interval_1h':
+      if call.data == 'start|interval_1h':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -681,7 +665,7 @@ For settings and configurations, press the settings button.
          bot.send_message(call.message.chat.id, response_string)
 
 
-      if call.data == 'interval_5m':
+      if call.data == 'start|interval_5m':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -699,7 +683,7 @@ For settings and configurations, press the settings button.
 
          bot.send_message(call.message.chat.id, response_string)
 
-      if call.data == 'interval_1m':
+      if call.data == 'start|interval_1m':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -725,7 +709,7 @@ For settings and configurations, press the settings button.
 
    # help menu handling
    if current_state == 'help_menu':
-      if call.data == 'main':
+      if call.data == 'start|main':
          # set the state back to main:
          set_state(message_key, 'main')
 
@@ -735,52 +719,21 @@ For settings and configurations, press the settings button.
          response_string = f"""
 Hello this is {bot.get_my_name().name}!
 
-Here are my basic command lists:
-/ps [stock_ticker] - returns recent price data for a given stock ticker (Data Source: YahooFinance API).
-/ps GME
+Press the "Help" button to find out more about the different commands I can run!
 
-/pc [coin_ticker] - returns recent price data for a given coin ticker (Data Source: CoinMarketCap API).
-/ps BTC
+Press the "Settings" button to configure the bots and how different commands behave!
 
-/help [command] - returns the help article and usage of a given command.
-/help ps
-
-/settings - prints the settings tab for the bot, where you are able to tweak the configuration and settings for various features of the bot.
-
-For detailed help on functions, press the help button.
-For settings and configurations, press the settings button.
+Any questions feel free to join our Telegram group!
 """
          # load and send the new message:
          bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
       
 
       # handle different help messages
-      if call.data == 'ps_help':
+      if call.data == 'start|ps_help':
          bot.answer_callback_query(call.id, "You chose /ps help")
-      if call.data == 'pc_help':
+      if call.data == 'start|pc_help':
          bot.answer_callback_query(call.id, "You chose /pc help")
-
-
-
-"""
-
-   # period buttons
-   p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='period_1y')
-   pytd_button = InlineKeyboardButton("Period: YTD", callback_data='period_ytd')
-   p3mo_button = InlineKeyboardButton("Period: 3 Month", callback_data='period_3mo')
-   p1mo_button = InlineKeyboardButton("Period: 1 Month", callback_data='period_1mo')
-
-   # interval buttons
-   i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='interval_1d')
-   i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='interval_1h')
-   i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='interval_5m')
-   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='interval_1m')
-
-"""
-
-
-
-
 
 
 
@@ -820,14 +773,8 @@ def send_price(message):
   /ps [ticker]
 
   sends a message in reply to the command by the user of the last few days of recent price changes.
-  example: /ps gme
-  << default CHART >>
-  | $GME     |    $12
-  | H|L: $12 | $11
-  | 24H: -5% [emoji]
-  | 7d:  -5% [emoji]
-  | Volume(7d): 35M
-  Shill link with URL / link
+  Refresh Price button - refreshes the price with the most up to date data
+  Chart - plots the price data based on the chart configuration and sends it to the chat
   """
   # load the configuration files:
   config = load_config(message.chat.id)
@@ -867,6 +814,8 @@ def send_price(message):
 
      # get the price of ETH
      price_eth = 1500
+
+     # construct the string response
      response = f"<a href='https://finance.yahoo.com/quote/{request}'>{request.upper()}</a><pre> {'$'+str(last_known_price)}\n"
      response+= f"Ξ: {round((last_known_price/price_eth),8)}\n"
      response+= f"H|L: {str(high_24h)}|{str(low_24h)}\n"
@@ -877,25 +826,60 @@ def send_price(message):
      response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
      response+= f'-----\n</pre>'
      response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
+
+     markup = ps_markup()
+     bot.send_message(message.chat.id, response, reply_markup=markup, parse_mode='HTML', disable_web_page_preview=True)
      
-     ## read the byte and load the image and hyperlink for ref links, timeframe is based on the config file settings;
-     cfg_period = config['chart_settings']['stocks']['period']
-     cfg_interval = config['chart_settings']['stocks']['interval']
 
 
-     plot_data = yf.download(tickers=request, period=cfg_period, interval=cfg_interval)['Close']
 
-     plot_data.plot(kind='line', title=f'{cfg_period} price for {request.upper()}')
-     buf = io.BytesIO()
-     plt.savefig(buf, format='png')
-     buf.seek(0)
-     bot.send_photo(message.chat.id, buf.read(), caption=response, parse_mode='HTML')
-     # clean the plts and close the buffer
-     plt.clf()
-     buf.close()
+
+
+
+
+   #   read and construct the price chart based on configuration settings
+   #   cfg_period = config['chart_settings']['stocks']['period']
+   #   cfg_interval = config['chart_settings']['stocks']['interval']
+   #   plot_data = yf.download(tickers=request, period=cfg_period, interval=cfg_interval)['Close']
+   #   plot_data.plot(kind='line', title=f'{cfg_period} price for {request.upper()}')
+   #   buf = io.BytesIO()
+   #   plt.savefig(buf, format='png')
+   #   buf.seek(0)
+   #   bot.send_photo(message.chat.id, buf.read(), caption=response, parse_mode='HTML')
+   #   # clean the plts and close the buffer
+   #   plt.clf()
+   #   buf.close()
   
   else:
     bot.send_message(message.chat.id, "No data!\n For indexes please add a ^ to the ticker like ^SPX ^DJI. \nFor overseas stocks please define their market like SU.TO or WEED.TO")
+
+def ps_markup():
+   markup = InlineKeyboardMarkup()
+   refresh_button = InlineKeyboardButton("Refresh", callback_data='ps|refresh')
+   chart_button = InlineKeyboardButton("Chart 📈", callback_data='ps|chart')
+   markup.row(refresh_button, chart_button)
+   return markup
+
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'ps')
+def handle_ps_callback(call):
+   if call.data == 'ps|refresh':
+      pass
+   
+   if call.data == 'ps|chart':
+      pass
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
