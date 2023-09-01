@@ -313,36 +313,42 @@ Choose directly from the options below:
 
 def main_menu():
    markup = InlineKeyboardMarkup()
-   markup.add(InlineKeyboardButton("Settings", callback_data='settings'))
-   markup.add(InlineKeyboardButton("Help", callback_data='help'))
+   settings_button = InlineKeyboardButton("Settings ⚙️", callback_data='settings')
+   help_button = InlineKeyboardButton("Help ℹ️", callback_data='help')
+   markup.row(settings_button, help_button)
    return markup
 
 def settings_menu():
-    markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("/ps settings", callback_data='ps_settings'))
-    markup.add(InlineKeyboardButton("/pc settings", callback_data='pc_settings'))
-    markup.add(InlineKeyboardButton("Go back", callback_data='main'))
     # TODO: add more buttons / features in the future like localized currencies
+    markup = InlineKeyboardMarkup()
+    back_button = InlineKeyboardButton("Go back 🔙", callback_data='main')
+    ps_button = InlineKeyboardButton("/ps settings", callback_data='ps_settings')
+    pc_button = InlineKeyboardButton("/pc settings", callback_data='pc_settings')
+    markup.row(ps_button,pc_button)
+    markup.row(back_button)
     return markup
 
 
 def help_menu():
    markup = InlineKeyboardMarkup()
-   markup.add(InlineKeyboardButton("/ps", callback_data='ps_help'))
-   markup.add(InlineKeyboardButton("/pc", callback_data='pc_help'))
-   markup.add(InlineKeyboardButton("Go back", callback_data='main'))
+   ps_help_button = InlineKeyboardButton("/ps", callback_data='ps_help')
+   pc_help_button = InlineKeyboardButton("/pc", callback_data='pc_help')
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='main')
+   markup.row(ps_help_button, pc_help_button)
+   markup.row(back_button)
    return markup
 
 def ps_options():
    markup = InlineKeyboardMarkup()
-   markup.add(InlineKeyboardButton("Chart Settings", callback_data='chart_settings'))
-   # markup.add(InlineKeyboardButton("Currency Settings", callback_data='currency_settings'))
-   markup.add(InlineKeyboardButton("Go back", callback_data='settings'))
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='settings')
+   chart_settings_button = InlineKeyboardButton("Chart Settings 📈", callback_data='chart_settings')
+   markup.row(chart_settings_button)
+   markup.row(back_button)
    return markup
 
 def stock_chart_menu():
    markup = InlineKeyboardMarkup()
-   back_button = InlineKeyboardButton("Go back", callback_data='ps_settings')
+   back_button = InlineKeyboardButton("Go back 🔙", callback_data='ps_settings')
 
    # period buttons
    p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='period_1y')
