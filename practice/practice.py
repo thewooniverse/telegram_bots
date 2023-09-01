@@ -24,7 +24,6 @@ NEXT UP:
 - /ps tidy up dataframes, intervals
 - /ps pretty formatting for the graphs!
 
----- COMPELTED FEATURES ABOVE ----
 
 1. /start feature with buttons
 -- /start shows the basic usage and set up
@@ -32,9 +31,7 @@ NEXT UP:
 ---- buttons direct you to help regarding specific functions (with more buttons)
 ---- settings button direct you to specific functions as well.
 
-2. /help [command]
--- provides help regarding a command, sending the docstring, parsed as a HTML to the chat;
-
+---- COMPELTED FEATURES ABOVE ----
 
 
 
@@ -201,19 +198,30 @@ def get_state(chat_id):
 
 
 ### HELPER FUNCTIONS ###
+def advertisement():
+   advertisements = [
+      '👉Advertise with us👈',
+      '👽Get Liquidated on ByBit👽',
+      '🚀Trade on Binance🚀',
+      '🦄Trade on UniBot🤖',
+   ]
+   return random.choice(advertisements)
+
+
+
 def sentiment_emoji(pct_change):
    """
    return a emoji that is ready to be sent as a string in response to mangitude of positive or negative percent that is passed.
    """
    emoji_dict = {
       "insanely_bullish": ['🌝','👽'], #90%+ above mega pumps
-      "very_bullish": ['🚀', '⏫'], # 30-90% gain
-      "bullish": ['📈', '🔼'], # 10-30% gain
-      "slightly_bullish": ['🫰','🫶'], # 1-10% gain
-      "slightly_bearish": ['😬','😐'], # 1- 10% drop 
-      "bearish": ['😰', '😨'], # 10-30% drop
-      "very_bearish": ['😩', '🥶'], # 30-75-% drop
-      "insanely_bearish": ['🤡', '☠️', '🪦', '🤣'] # gg, -75% or higher
+      "very_bullish": ['🚀', '⏫', '🤩'], # 30-90% gain
+      "bullish": ['📈', '🔼', '😮', '😻'], # 10-30% gain
+      "slightly_bullish": ['🫰','🫶', '😏', '😼'], # 1-10% gain
+      "slightly_bearish": ['😬','😐', '🫣', '😾'], # 1- 10% drop 
+      "bearish": ['😰', '😨', '😰'], # 10-30% drop
+      "very_bearish": ['😩', '🥶', '🙀'], # 30-75-% drop
+      "insanely_bearish": ['🤡', '☠️', '🪦', '🤣', '😹', '🖕'] # gg, -75% or higher
    }
    if pct_change >= 90:
       return random.choice(emoji_dict['insanely_bullish'])
@@ -354,13 +362,11 @@ def stock_chart_menu():
    i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='start|interval_1d')
    i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='start|interval_1h')
    i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='start|interval_5m')
-   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='start|interval_1m')
 
    # formatting the buttons
    markup.row(p1y_button, pytd_button)
    markup.row(p3mo_button, p1mo_button)
-   markup.row(i1d_button, i1h_button)
-   markup.row(i5m_button, i1m_button)
+   markup.row(i1d_button, i1h_button, i5m_button)
    markup.row(back_button)
    return markup
 
@@ -583,7 +589,7 @@ Any questions feel free to join our Telegram group!
 
 
       
-      if call.data == 'start|period_1y':
+      if call.data == 'start|period_3mo':
          # load the basic config first
          config = load_config(call.message.chat.id)
 
@@ -682,27 +688,6 @@ Any questions feel free to join our Telegram group!
          response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
 
          bot.send_message(call.message.chat.id, response_string)
-
-      if call.data == 'start|interval_1m':
-         # load the basic config first
-         config = load_config(call.message.chat.id)
-
-         # break down the config, to change the settings into the relevant configurations
-         old_interval = config['chart_settings']['stocks']['interval']
-         new_interval = '1m'
-
-         config['chart_settings']['stocks']['interval'] = new_interval
-
-         # set the new config and prepare the payload for the function
-         set_config(call.message.chat.id, config)
-
-         # now that the config has been changed, construct the string and notify the group / user of the changes:
-         response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
-
-         bot.send_message(call.message.chat.id, response_string)
-
-
-
 
 
 
@@ -825,48 +810,86 @@ def send_price(message):
      response+= f'Market Cap: {parse_big_num(mcap)}\n'
      response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
      response+= f'-----\n</pre>'
-     response+= f"<a href='https://www.example.com'>👉Advertise with us👈</a>"
+     response+= f"<a href='https://www.example.com'>{advertisement()}</a>"
 
-     markup = ps_markup()
+     markup = ps_markup(request)
      bot.send_message(message.chat.id, response, reply_markup=markup, parse_mode='HTML', disable_web_page_preview=True)
      
-
-
-
-
-
-
-
-   #   read and construct the price chart based on configuration settings
-   #   cfg_period = config['chart_settings']['stocks']['period']
-   #   cfg_interval = config['chart_settings']['stocks']['interval']
-   #   plot_data = yf.download(tickers=request, period=cfg_period, interval=cfg_interval)['Close']
-   #   plot_data.plot(kind='line', title=f'{cfg_period} price for {request.upper()}')
-   #   buf = io.BytesIO()
-   #   plt.savefig(buf, format='png')
-   #   buf.seek(0)
-   #   bot.send_photo(message.chat.id, buf.read(), caption=response, parse_mode='HTML')
-   #   # clean the plts and close the buffer
-   #   plt.clf()
-   #   buf.close()
   
   else:
     bot.send_message(message.chat.id, "No data!\n For indexes please add a ^ to the ticker like ^SPX ^DJI. \nFor overseas stocks please define their market like SU.TO or WEED.TO")
 
-def ps_markup():
+def ps_markup(ticker):
    markup = InlineKeyboardMarkup()
-   refresh_button = InlineKeyboardButton("Refresh", callback_data='ps|refresh')
-   chart_button = InlineKeyboardButton("Chart 📈", callback_data='ps|chart')
+   refresh_button = InlineKeyboardButton("Refresh 🔄", callback_data=f'ps|refresh|{ticker}')
+   chart_button = InlineKeyboardButton("Chart 📈", callback_data=f'ps|chart|{ticker}')
    markup.row(refresh_button, chart_button)
    return markup
 
+
+
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'ps')
 def handle_ps_callback(call):
-   if call.data == 'ps|refresh':
-      pass
+   if call.data.split("|")[1] == 'refresh':
+      # refresh all the relevant data
+      ticker = call.data.split("|")[2]
+      ticker_data = yf.Ticker(ticker)
+      try:
+         mcap = ticker_data.info['marketCap']
+      except:
+         mcap = 0
+
+      data_1month_5m = yf.download(tickers=ticker, period='1mo', interval='5m')
+      data_close = data_1month_5m['Close'].round(2)
+      close_prices_24h = data_close.last('24H')
+      last_known_price = data_close.iloc[-1]
+      high_24h = close_prices_24h.max()
+      low_24h = close_prices_24h.min()
+
+      close_prices_1h = data_close.last('1H') #24h is already assigned
+      close_prices_7d =  data_close.last('7D')
+      pct_change_1h = pct_change(close_prices_1h.iloc[0], close_prices_1h.iloc[-1])
+      pct_change_24h = pct_change(close_prices_24h.iloc[0], close_prices_24h.iloc[-1])
+      pct_change_7d = pct_change(close_prices_7d.iloc[0], close_prices_7d.iloc[-1])
+      volume_7d = data_1month_5m['Volume'].last('7D').sum()
+
+      # get the price of ETH
+      price_eth = 1500
    
-   if call.data == 'ps|chart':
-      pass
+      response = f"<a href='https://finance.yahoo.com/quote/{ticker}'>{ticker.upper()}</a><pre> {'$'+str(last_known_price)}\n"
+      response+= f"Ξ: {round((last_known_price/price_eth),8)}\n"
+      response+= f"H|L: {str(high_24h)}|{str(low_24h)}\n"
+      response+= f'{"1H":<5}{str(pct_change_1h)+"%":>8} {sentiment_emoji(pct_change_1h)}\n'
+      response+= f'{"24H":<5}{str(pct_change_24h)+"%":>8} {sentiment_emoji(pct_change_24h)}\n'
+      response+= f'{"7D":<5}{str(pct_change_7d)+"%":>8} {sentiment_emoji(pct_change_7d)}\n'
+      response+= f'Market Cap: {parse_big_num(mcap)}\n'
+      response+= f'Vol(7D): {parse_big_num(volume_7d)}\n'
+      response+= f'-----\n</pre>'
+      response+= f"<a href='https://www.example.com'>{advertisement()}</a>"
+
+      # load the markup again
+      markup = ps_markup(ticker)
+
+      # send the message
+      bot.edit_message_text(response, call.message.chat.id, call.message.message_id, reply_markup=markup, disable_web_page_preview=True, parse_mode='HTML')
+
+   
+   if call.data.split("|")[1] == 'chart':
+   #   read and construct the price chart based on configuration settings
+      ticker = call.data.split("|")[2]
+      config = load_config(call.message.chat.id)
+      cfg_period = config['chart_settings']['stocks']['period']
+      cfg_interval = config['chart_settings']['stocks']['interval']
+      plot_data = yf.download(tickers=ticker, period=cfg_period, interval=cfg_interval)['Close']
+      plot_data.plot(kind='line', title=f'{cfg_period} price for {ticker.upper()}')
+      buf = io.BytesIO()
+      plt.savefig(buf, format='png')
+      buf.seek(0)
+
+      bot.send_photo(call.message.chat.id, buf.read(), parse_mode='HTML')
+      # clean the plts and close the buffer
+      plt.clf()
+      buf.close()
 
 
 
