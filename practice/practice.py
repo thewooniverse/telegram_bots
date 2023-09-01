@@ -54,6 +54,15 @@ ICE BOX:
 
 /GPT [Query] -
 
+BD for peepo bot will be very important -> Kudasai and other integrations, feedback, calls etc...
+PLEASE USE OUR BOT!
+
+
+
+
+
+
+
 
 UPGRADE: Introducing "threaded" polling / multithreading for bot;
 bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
@@ -142,12 +151,17 @@ def load_config(group_id):
 
 
 
-def set_config(group_id, settings):
+def set_config(group_id, new_config):
    """
    group_id == chatid.
-   settings is a tuple that should be unpacked in (settings, value) manner.
+   new_config should be a dict config that has the same structure but with new settings
    """
-   pass
+   chat_path = f'{os.getcwd()}{os.path.sep}chats'
+   group_path = f'{chat_path}{os.path.sep}{group_id}'
+   config_path = f"{group_path}{os.path.sep}config.json"
+
+   with open(config_path, 'w') as wf:
+      json.dump(new_config, wf)
 
 
 
@@ -297,7 +311,6 @@ Choose directly from the options below:
 
 
 
-
 def main_menu():
    markup = InlineKeyboardMarkup()
    markup.add(InlineKeyboardButton("Settings", callback_data='settings'))
@@ -320,6 +333,37 @@ def help_menu():
    markup.add(InlineKeyboardButton("Go back", callback_data='main'))
    return markup
 
+def ps_options():
+   markup = InlineKeyboardMarkup()
+   markup.add(InlineKeyboardButton("Chart Settings", callback_data='chart_settings'))
+   # markup.add(InlineKeyboardButton("Currency Settings", callback_data='currency_settings'))
+   markup.add(InlineKeyboardButton("Go back", callback_data='settings'))
+   return markup
+
+def stock_chart_menu():
+   markup = InlineKeyboardMarkup()
+   back_button = InlineKeyboardButton("Go back", callback_data='ps_settings')
+
+   # period buttons
+   p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='period_1y')
+   pytd_button = InlineKeyboardButton("Period: YTD", callback_data='period_ytd')
+   p3mo_button = InlineKeyboardButton("Period: 3 Month", callback_data='period_3mo')
+   p1mo_button = InlineKeyboardButton("Period: 1 Month", callback_data='period_1mo')
+
+   # interval buttons
+   i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='interval_1d')
+   i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='interval_1h')
+   i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='interval_5m')
+   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='interval_1m')
+
+   # formatting the buttons
+   markup.row(p1y_button, pytd_button)
+   markup.row(p3mo_button, p1mo_button)
+   markup.row(i1d_button, i1h_button)
+   markup.row(i5m_button, i1m_button)
+   markup.row(back_button)
+   return markup
+
 
 
 
@@ -329,18 +373,14 @@ def help_menu():
 def callback_handler(call):
    # get the current state of the chat
    message_key = f'{call.message.chat.id}_{call.message.message_id}'
-
    current_state = get_state(message_key)
 
-
-   # main menu and state
-
+   # main menu and states
    if current_state == 'main':
    # settings and settings sub menu / states
       if call.data == 'settings':
          # change the state
          set_state(message_key, 'settings_menu')
-
          # load the settings menu buttons
          markup = settings_menu()
 
@@ -350,14 +390,13 @@ def callback_handler(call):
          # unpack the configuration and create the response / settings message to user based on current configurations;
          settings_message = "Current Configuration:\n"
          for key,value in config.items():
-            ignore_keys = ['group_id', 'admins']
+            ignore_keys = ['group_id', 'admins', 'chart_settings']
             # pass all
             if key not in ignore_keys:
                settings_message+=f'{key}: {value}\n'
 
          # load and edit the message / buttons
          bot.edit_message_text(settings_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
-
 
       if call.data == 'help':
          # change the state
@@ -372,11 +411,7 @@ def callback_handler(call):
          bot.edit_message_text(help_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
       
 
-
-
-
    if current_state == 'settings_menu':
-
       if call.data == 'main':
          # set the state back to main:
          set_state(message_key, 'main')
@@ -405,12 +440,284 @@ For settings and configurations, press the settings button.
          # load and send the new message:
          bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
       
-      # handle different price settings states
+
+
+      # handle different price settings and change states accordingly
       if call.data == 'ps_settings':
-         bot.answer_callback_query(call.id, "You chose /ps settings")
+         # set the state to ps_settings
+         set_state(message_key, 'ps_options')
+
+         # load the markup buttons for the ps settings menu
+         markup = ps_options()
+
+         # construct the response strings
+         response_string = "/ps [stock] - Price of Stock command configuration:\n"
+         response_string += "Current /ps configurations:\n-----\n"
+
+         # load and display the configurations
+         config = load_config(call.message.chat.id)
+
+         # Portfolio Configuration
+         response_string += 'Current Portfolio Settings:\n'
+         response_string += f'{".".join(config["tracked_stocks"])}\n-----\n'
+
+         # chart configurations
+         response_string += 'Current Chart Settings:\n'
+         chart_settings = config['chart_settings']
+         stock_chart_settings = chart_settings['stocks']
+         for key, value in stock_chart_settings.items():
+            response_string += f'{key}: {value}\n'
+
+         # construct the strings for the ps settings menu
+         bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+      # pc feature is NOT built yet, therefore does not have any functionality, but it will be built in a similar way as the /ps features and settings
       if call.data == 'pc_settings':
          bot.answer_callback_query(call.id, "You chose /pc settings")
    
+
+
+   # "ps_settings" was pressed, now we display / handle different buttons from the "ps_options" state
+   if current_state == 'ps_options':
+
+      # if user presses "go back" -> their callback data will be 'settings'
+      if call.data == 'settings':
+         # change the state
+         set_state(message_key, 'settings_menu')
+         # load the settings menu buttons
+         markup = settings_menu()
+
+         # load / construct the message based on current configurations
+         ## the config is accessed based on chat.id, as the config files persist on a chat level instead of a message level
+         config = load_config(call.message.chat.id)
+         # unpack the configuration and create the response / settings message to user based on current configurations;
+         settings_message = "Current Configuration:\n"
+         for key,value in config.items():
+            ignore_keys = ['group_id', 'admins', 'chart_settings']
+            # pass all
+            if key not in ignore_keys:
+               settings_message+=f'{key}: {value}\n'
+
+         # load and edit the message / buttons
+         bot.edit_message_text(settings_message, call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+      # if the user presses 'chart settings' -> this will construct a new bunch of settings
+      if call.data == 'chart_settings':
+         # set the state
+         set_state(message_key, 'stock_chart_settings')
+
+         # load the markup
+         markup = stock_chart_menu()
+
+         # construct the response body string
+         response_string = "/ps [stock] - Chart configurations and settings:\n"
+         response_string+= "Period - how far back into the past your chart will go\n"
+         response_string+= "Interval - the time intervals for your chart\n"
+
+         # load and send the message:
+         bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+
+
+   # if the "chart settings" button is pressed, we are now in "stock_chart_settings" state, handling all of its buttons and options
+   # here is the screen where you are changing the different periods and interval buttons
+   if current_state == 'stock_chart_settings':
+
+      # if the user presses "go back" - the call data will be
+      if call.data == 'ps_settings':
+         # set the state to ps_settings
+         set_state(message_key, 'ps_options')
+
+         # load the markup buttons for the ps settings menu
+         markup = ps_options()
+
+         # construct the response strings
+         response_string = "/ps [stock] - Price of Stock command configuration:\n"
+         response_string += "Current /ps configurations:\n-----\n"
+
+         # load and display the configurations
+         config = load_config(call.message.chat.id)
+
+         # Portfolio Configuration
+         response_string += 'Current Portfolio Settings:\n'
+         response_string += f'{".".join(config["tracked_stocks"])}\n-----\n'
+
+         # chart configurations
+         response_string += 'Current Chart Settings:\n'
+         chart_settings = config['chart_settings']
+         stock_chart_settings = chart_settings['stocks']
+         for key, value in stock_chart_settings.items():
+            response_string += f'{key}: {value}\n'
+
+         # construct the strings for the ps settings menu
+         bot.edit_message_text(response_string, call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+
+      # each handling should change the config on the chat.id config level and send a message in the chat to confirm! But the markups should remain the same..?
+      if call.data == 'period_1y':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_period = config['chart_settings']['stocks']['period']
+         new_period = '1y'
+
+         config['chart_settings']['stocks']['period'] = new_period
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Time Period] has been changed from {old_period} to {new_period}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+      
+      if call.data == 'period_ytd':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_period = config['chart_settings']['stocks']['period']
+         new_period = 'ytd'
+
+         config['chart_settings']['stocks']['period'] = new_period
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Time Period] has been changed from {old_period} to {new_period}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+
+      
+      if call.data == 'period_1y':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_period = config['chart_settings']['stocks']['period']
+         new_period = '3mo'
+
+         config['chart_settings']['stocks']['period'] = new_period
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Time Period] has been changed from {old_period} to {new_period}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+
+      
+      if call.data == 'period_1mo':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_period = config['chart_settings']['stocks']['period']
+         new_period = '1MO'
+
+         config['chart_settings']['stocks']['period'] = new_period
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Time Period] has been changed from {old_period} to {new_period}"
+
+         bot.send_message(call.message.chat.id, response_string)
+      
+
+
+
+
+
+      # handle all of the interval cahnges
+      if call.data == 'interval_1d':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_interval = config['chart_settings']['stocks']['interval']
+         new_interval = '1d'
+
+         config['chart_settings']['stocks']['interval'] = new_interval
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
+
+         bot.send_message(call.message.chat.id, response_string)
+      
+      
+      if call.data == 'interval_1h':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_interval = config['chart_settings']['stocks']['interval']
+         new_interval = '1h'
+
+         config['chart_settings']['stocks']['interval'] = new_interval
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+
+      if call.data == 'interval_5m':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_interval = config['chart_settings']['stocks']['interval']
+         new_interval = '5m'
+
+         config['chart_settings']['stocks']['interval'] = new_interval
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+      if call.data == 'interval_1m':
+         # load the basic config first
+         config = load_config(call.message.chat.id)
+
+         # break down the config, to change the settings into the relevant configurations
+         old_interval = config['chart_settings']['stocks']['interval']
+         new_interval = '1m'
+
+         config['chart_settings']['stocks']['interval'] = new_interval
+
+         # set the new config and prepare the payload for the function
+         set_config(call.message.chat.id, config)
+
+         # now that the config has been changed, construct the string and notify the group / user of the changes:
+         response_string = f"Configuration for [Interval] has been changed from {old_interval} to {new_interval}"
+
+         bot.send_message(call.message.chat.id, response_string)
+
+
+
+
+
+
+
+   # help menu handling
    if current_state == 'help_menu':
       if call.data == 'main':
          # set the state back to main:
@@ -446,6 +753,28 @@ For settings and configurations, press the settings button.
          bot.answer_callback_query(call.id, "You chose /ps help")
       if call.data == 'pc_help':
          bot.answer_callback_query(call.id, "You chose /pc help")
+
+
+
+"""
+
+   # period buttons
+   p1y_button = InlineKeyboardButton("Period: 1 Year", callback_data='period_1y')
+   pytd_button = InlineKeyboardButton("Period: YTD", callback_data='period_ytd')
+   p3mo_button = InlineKeyboardButton("Period: 3 Month", callback_data='period_3mo')
+   p1mo_button = InlineKeyboardButton("Period: 1 Month", callback_data='period_1mo')
+
+   # interval buttons
+   i1d_button = InlineKeyboardButton("Interval: 1 Day", callback_data='interval_1d')
+   i1h_button = InlineKeyboardButton("Interval: 1 Hour", callback_data='interval_1h')
+   i5m_button = InlineKeyboardButton("Interval: 5 Minutes", callback_data='interval_5m')
+   i1m_button = InlineKeyboardButton("Interval: 1 Minutes", callback_data='interval_1m')
+
+"""
+
+
+
+
 
 
 

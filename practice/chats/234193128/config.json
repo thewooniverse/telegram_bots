@@ -1,1 +1,1 @@
-{"group_id": "", "currency": "USD", "tracked_stocks": ["COIN", "TSLA", "GME"], "tracked_coins": ["BTC", "ETH", "DOGE"], "admins": [], "chart_settings": {"stocks": {"period": "1MO", "interval": "1D"}, "coins": {"period": "1D", "interval": "5m"}}}
+{"group_id": "", "currency": "USD", "tracked_stocks": ["COIN", "TSLA", "GME"], "tracked_coins": ["BTC", "ETH", "DOGE"], "admins": [], "chart_settings": {"stocks": {"period": "1MO", "interval": "1h"}, "coins": {"period": "1D", "interval": "5m"}}}
