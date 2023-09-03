@@ -1,3 +1,4 @@
+import telebot
 import os
 from dotenv import load_dotenv
 import sys
@@ -7,11 +8,19 @@ from langchain.indexes import VectorstoreIndexCreator
 
 
 
+####################
+###### set up ######
+####################
+
+
 # load environment keys and construct the bot;
 load_dotenv()
 TG_API_KEY = os.getenv('TG_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY # find out what this bit of code does.
+
+# construct the bots;
+bot = telebot.TeleBot(TG_API_KEY)
 
 
 
@@ -43,6 +52,19 @@ def set_config(chat_id, new_config):
     """
     Takes the new config, and overwrites the existing config file at chat_id's config path
     """
+
+
+
+
+
+
+##############################
+###### Message Handlers ######
+##############################
+
+@bot.message_handler(commands=['start', 'menu'])
+
+
 
 
 
