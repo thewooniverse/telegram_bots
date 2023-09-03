@@ -26,8 +26,8 @@ print(data_5m_1m.last('7D'))
 print(data_5m_1m.last('7D')['Close'].min())
 
 
-with open('data.json', 'w') as f:
-    json.dump(data_5m_1m, f)
+# with open('data.json', 'w') as f:
+#     json.dump(data_5m_1m, f)
 
 
 
