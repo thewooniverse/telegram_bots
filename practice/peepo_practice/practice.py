@@ -31,6 +31,17 @@ NEXT UP:
 ---- buttons direct you to help regarding specific functions (with more buttons)
 ---- settings button direct you to specific functions as well.
 
+0. Formatting and padding using length of responses -> helper function to pretty-fy it
+1. Optional interval dataset to handle different types / amounts of data available
+2. Config and default config files
+3. Refactor Different response types based on config files
+-- Chart config
+
+Feature: configurations / settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
+-- for each chatid (groupchat), there should be a directory for that chat, configs / settings, logs, bans etc...
+
+
+
 ---- COMPELTED FEATURES ABOVE ----
 
 
@@ -50,35 +61,46 @@ NEXT UP:
 
 
 
+
+TODO:
+
+Refactor for __main__ features
+
+Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
+
+AWS upload and uptime logging ++ scripts for keeping the bot script itself up;
+
+
+------------------------------------------------
 ICE BOX:
 
-Refactor dialogues for modularity.
+Refactor dialogues for modularity / maintenance
 
-/GPT [Query] -
+{admin} and admin related configurations
+
+
+
+# price / trading features;
 
 BD for peepo bot will be very important -> Kudasai and other integrations, feedback, calls etc...
 PLEASE USE OUR BOT!
-
 
 UPGRADE: Introducing "threaded" polling / multithreading for bot;
 bot = telebot.TeleBot(API_TOKEN, threaded=True) -> test it with time.sleep(2) and handling multiple requests to see what / how they respond to things.
 or polling(threaded=True)
 Multithreaded testing, multiple groupchats handling.
+-- in general how do I make it more performant?
+
+
+Feature: /noise [ticker] -> noise level analysis along with sentiment analysis - level of chatter on different social media;
+
+Feature: earnings data organization and macro number prints calendar;
+Feature: tokenomics insight;
+Feature: onchain wallet sniffing;
 
 
 
-
-
-Feature: /gpt -> simple integration into calling GPT model with a specific message / query, and responding with the response from GPT.
-
-Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
-
-Feature: some kind of dialogue where the response leads to xyz, asking the user a question, and then getting some kind of response and then saving it into a config file.
-
-Feature: /noise [ticker] -> noise level analysis along with sentiment analysis
-
-Feature: configurations / settings - change timeframe of default images (currently, defautl settings) -> this brings us to making config files / settings files as well.
--- for each chatid (groupchat), there should be a directory for that chat, configs / settings, logs, bans etc...
+### moderating / filtering features
 
 Feature: filter (delete) swearwords, warn users and mute in case of multiple violations
 -- when the filter catches a bad word, it deletes the message and warns the user with the count of violations and how many strikes they have left.
@@ -90,20 +112,9 @@ cell containing specifically the string that they violated with or were reported
 Feature: filter for content type
 -- Not allowing links to be sent, potentially based on how long they've joined for. No links or no images etc..
 
-
-
-
-
 NOTE:
 Reaistically though, its not necessary for a single price bot to have all of these moderator tools as well...
 Frankenstein bot almost this is... after it I am going to probably need to divide up and clean up the code a lot.
-
-TODO:
-0. Formatting and padding using length of responses -> helper function to pretty-fy it
-1. Optional interval dataset to handle different types / amounts of data available
-2. Config and default config files
-3. Refactor Different response types based on config files
--- Chart config
 """
 
 
@@ -112,7 +123,7 @@ TODO:
 # loading the environment variables
 load_dotenv()
 TG_API_KEY = os.getenv('TG_API_KEY')
-OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
+# OPEN_API_KEY = os.getenv('OPEN_AI_API_KEY')
 # print(OPEN_API_KEY) # prints 'test ABC' correctly
 # print(TG_API_KEY)
 
