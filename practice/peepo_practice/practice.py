@@ -46,22 +46,6 @@ Feature: configurations / settings - change timeframe of default images (current
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TODO:
 
 Refactor for __main__ features
@@ -69,6 +53,8 @@ Refactor for __main__ features
 Feature: /pc [ticker] API call for coingecko / cmc for the prices (similar to other price bots) -> csv or 
 
 AWS upload and uptime logging ++ scripts for keeping the bot script itself up;
+
+Refactor state handling to instead be stored on the chat directory rather than in a single file;
 
 
 ------------------------------------------------
