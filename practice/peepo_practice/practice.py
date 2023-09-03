@@ -166,33 +166,41 @@ def set_config(group_id, new_config):
 
 
 # state management handling and functions
-def set_state(chat_id, state):
+def set_state(message_key, state):
    """
    """
-   state_log_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}states.json'
+   # parse the message key to have just the chat id;
+   chat_id = message_key.split("_")[1]
+
+   # check if state file exists AT the chat director level;
+   chat_state_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}{chat_id}{os.path.sep}states.json'
+
    # checks if the state file exists, if it doesn't create an empty one
-   if not os.path.exists(state_log_path):
-      with open(state_log_path, 'w') as wf:
+   if not os.path.exists(chat_state_path):
+      with open(chat_state_path, 'w') as wf:
          json.dump({}, wf)
    
    # now that the state is created, we can access / open it.
    states = {}
-   with open(state_log_path, 'r') as rf:
-      states = json.load(rf)
+   with open(chat_state_path, 'r') as rf:
+      states = json.load(rf) # loads the json file
 
    # access / amend the state
-   states[chat_id] = state
+   states[message_key] = state
 
    # overwrite the state:
-   with open(state_log_path, 'w') as wf:
+   with open(chat_state_path, 'w') as wf:
       json.dump(states, wf)
-   
 
-def get_state(chat_id):
-   state_log_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}states.json'
-   with open(state_log_path, 'r') as rf:
+
+def get_state(message_key):
+   # parse the message key to have just the chat id;
+   chat_id = message_key.split("_")[1]
+   
+   chat_state_path = f'{os.getcwd()}{os.path.sep}chats{os.path.sep}{chat_id}{os.path.sep}states.json'
+   with open(chat_state_path, 'r') as rf:
       states = json.load(rf)
-      return states.get(chat_id, 'main')
+      return states.get(message_key, 'main') # returns main if nothing is found
 
 
 
