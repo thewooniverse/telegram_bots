@@ -9,7 +9,7 @@ import constants
 # load_dotenv()
 # TG_API_KEY = os.getenv('TG_API_KEY')
 # OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-os.environ['OPENAI_API_KEY'] = constants.APIKEY
+os.environ['OPENAI_API_KEY'] = constants.APIKEY # this isn ot really a good solve
 
 
 

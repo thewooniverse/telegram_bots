@@ -24,8 +24,6 @@ Similar to peepo bot, this should have a similar architecture of saving logs of 
 - Settings and configurations for xyz per chat.
 
 
-
-
 ### 4. Load up to date coding documentation for up to date usage / guidelines;
 
 
@@ -40,11 +38,25 @@ Similar to peepo bot, this should have a similar architecture of saving logs of 
 
 
 
-
-
-
 ### Uncategorized;
-- __main__ and other types of python specific learning;
+- __main__ and other types of python specific learning; what can it be used for?
+
+
+
+
+# Architecture;
+Each chat_id / conversation thread has its own directory.
+
+|-/chat_id
+|---/chat_logs
+|------/chat_logs/date_organized logs / files (has to be in txt? it could also be in csv format) -> option yes / no will take the conversations of this file and add it to context files
+
+|---/context_files
+|------/context_files/txt files of different names; GPT will read through all files within this directory;
+
+
+
+
 
 
 
