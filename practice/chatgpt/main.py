@@ -62,9 +62,5 @@ def set_config(chat_id, new_config):
 ###### Message Handlers ######
 ##############################
 
-@bot.message_handler(commands=['start', 'menu'])
-
-
-
-
+# @bot.message_handler(commands=['start', 'menu'])
 
